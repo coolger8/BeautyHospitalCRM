@@ -1,0 +1,138 @@
+syntax = "proto3";
+
+package order;
+
+service OrderService {
+  rpc FindAll (Empty) returns (OrderList) {}
+  rpc FindOne (OrderId) returns (Order) {}
+  rpc Create (OrderCreateRequest) returns (Order) {}
+  rpc Update (OrderUpdateRequest) returns (Order) {}
+  rpc Remove (OrderId) returns (Empty) {}
+  rpc FindByCustomer (CustomerId) returns (OrderList) {}
+  rpc FindByStatus (OrderStatus) returns (OrderList) {}
+  rpc FindByPaymentMethod (PaymentMethod) returns (OrderList) {}
+  rpc GetOrdersByDateRange (DateRange) returns (OrderList) {}
+  rpc GetRevenueReport (DateRange) returns (RevenueReport) {}
+  rpc GetCustomerReport (CustomerId) returns (CustomerReport) {}
+}
+
+message Empty {}
+
+message OrderId {
+  int32 id = 1;
+}
+
+message CustomerId {
+  int32 id = 1;
+}
+
+message OrderStatus {
+  string status = 1;
+}
+
+message PaymentMethod {
+  string method = 1;
+}
+
+message DateRange {
+  string startDate = 1;
+  string endDate = 2;
+}
+
+message Order {
+  int32 id = 1;
+  int32 customerId = 2;
+  int32 projectId = 3;
+  int32 consultantId = 4;
+  string status = 5;
+  string paymentMethod = 6;
+  double amount = 7;
+  double discountAmount = 8;
+  double finalAmount = 9;
+  int32 discountApproverId = 10;
+  string notes = 11;
+  string createdAt = 12;
+  string updatedAt = 13;
+  Customer customer = 14;
+  Project project = 15;
+  Consultant consultant = 16;
+  DiscountApprover discountApprover = 17;
+}
+
+message Customer {
+  int32 id = 1;
+  string name = 2;
+  string gender = 3;
+  int32 age = 4;
+  string phone = 5;
+  string email = 6;
+}
+
+message Project {
+  int32 id = 1;
+  string name = 2;
+  string description = 3;
+  string category = 4;
+  double basePrice = 5;
+}
+
+message Consultant {
+  int32 id = 1;
+  string name = 2;
+  string email = 3;
+  string phone = 4;
+}
+
+message DiscountApprover {
+  int32 id = 1;
+  string name = 2;
+  string email = 3;
+  string phone = 4;
+}
+
+message OrderCreateRequest {
+  int32 customerId = 1;
+  int32 projectId = 2;
+  int32 consultantId = 3;
+  string status = 4;
+  string paymentMethod = 5;
+  double amount = 6;
+  double discountAmount = 7;
+  double finalAmount = 8;
+  int32 discountApproverId = 9;
+  string notes = 10;
+}
+
+message OrderUpdateRequest {
+  int32 id = 1;
+  OrderCreateRequest order = 2;
+}
+
+message OrderList {
+  repeated Order orders = 1;
+}
+
+message RevenueReport {
+  repeated RevenueByPaymentMethod revenueByPaymentMethod = 1;
+  double totalRevenue = 2;
+  repeated TopProject topProjects = 3;
+}
+
+message RevenueByPaymentMethod {
+  double totalRevenue = 1;
+  int32 orderCount = 2;
+  string paymentMethod = 3;
+}
+
+message TopProject {
+  string projectName = 1;
+  int32 orderCount = 2;
+  double totalRevenue = 3;
+}
+
+message CustomerReport {
+  int32 customerId = 1;
+  double totalSpent = 2;
+  int32 orderCount = 3;
+  map<string, int32> projectDistribution = 4;
+}

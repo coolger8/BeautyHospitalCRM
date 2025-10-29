@@ -1,0 +1,70 @@
+syntax = "proto3";
+
+package auth;
+
+service AuthService {
+  rpc Login (LoginRequest) returns (LoginResponse) {}
+  rpc Register (RegisterRequest) returns (Staff) {}
+  rpc CreateStaff (RegisterRequest) returns (Staff) {}
+  rpc ChangePassword (ChangePasswordRequest) returns (ChangePasswordResponse) {}
+  rpc GetProfile (StaffId) returns (Staff) {}
+  rpc GetStaffByRole (StaffRole) returns (StaffList) {}
+  rpc UpdateStaff (UpdateStaffRequest) returns (Staff) {}
+}
+
+message StaffId {
+  int32 id = 1;
+}
+
+message StaffRole {
+  string role = 1;
+}
+
+message LoginRequest {
+  string email = 1;
+  string password = 2;
+}
+
+message LoginResponse {
+  string access_token = 1;
+  Staff staff = 2;
+}
+
+message RegisterRequest {
+  string name = 1;
+  string email = 2;
+  string phone = 3;
+  string role = 4;
+  string password = 5;
+  bool isActive = 6;
+}
+
+message ChangePasswordRequest {
+  int32 id = 1;
+  string oldPassword = 2;
+  string newPassword = 3;
+}
+
+message ChangePasswordResponse {
+  bool success = 1;
+}
+
+message UpdateStaffRequest {
+  int32 id = 1;
+  RegisterRequest staff = 2;
+}
+
+message Staff {
+  int32 id = 1;
+  string name = 2;
+  string email = 3;
+  string phone = 4;
+  string role = 5;
+  bool isActive = 6;
+  string createdAt = 7;
+  string updatedAt = 8;
+}
+
+message StaffList {
+  repeated Staff staff = 1;
+}

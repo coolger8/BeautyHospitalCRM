@@ -1,0 +1,120 @@
+syntax = "proto3";
+
+package treatment;
+
+service TreatmentService {
+  rpc FindAll (Empty) returns (TreatmentList) {}
+  rpc FindOne (TreatmentId) returns (Treatment) {}
+  rpc Create (TreatmentCreateRequest) returns (Treatment) {}
+  rpc Update (TreatmentUpdateRequest) returns (Treatment) {}
+  rpc Remove (TreatmentId) returns (Empty) {}
+  rpc FindByCustomer (CustomerId) returns (TreatmentList) {}
+  rpc FindByDoctor (DoctorId) returns (TreatmentList) {}
+  rpc FindByConsultation (ConsultationId) returns (TreatmentList) {}
+  rpc GetTreatmentHistory (CustomerId) returns (TreatmentList) {}
+  rpc GetUpcomingTreatments (Days) returns (TreatmentList) {}
+}
+
+message Empty {}
+
+message TreatmentId {
+  int32 id = 1;
+}
+
+message CustomerId {
+  int32 id = 1;
+}
+
+message DoctorId {
+  int32 id = 1;
+}
+
+message ConsultationId {
+  int32 id = 1;
+}
+
+message Days {
+  int32 days = 1;
+}
+
+message Treatment {
+  int32 id = 1;
+  int32 customerId = 2;
+  int32 consultationId = 3;
+  int32 doctorId = 4;
+  int32 nurseId = 5;
+  int32 projectId = 6;
+  string productName = 7;
+  string dosage = 8;
+  string treatmentTime = 9;
+  string recoveryNotes = 10;
+  int32 rednessLevel = 11;
+  string customerFeedback = 12;
+  string nextTreatmentTime = 13;
+  int32 treatmentSequence = 14;
+  int32 totalTreatments = 15;
+  string createdAt = 16;
+  string updatedAt = 17;
+  Customer customer = 18;
+  Consultation consultation = 19;
+  Doctor doctor = 20;
+  Nurse nurse = 21;
+}
+
+message Doctor {
+  int32 id = 1;
+  string name = 2;
+  string email = 3;
+  string phone = 4;
+  string role = 5;
+}
+
+message Nurse {
+  int32 id = 1;
+  string name = 2;
+  string email = 3;
+  string phone = 4;
+  string role = 5;
+}
+
+message Customer {
+  int32 id = 1;
+  string name = 2;
+  string gender = 3;
+  int32 age = 4;
+  string phone = 5;
+  string email = 6;
+}
+
+message Consultation {
+  int32 id = 1;
+  string communicationContent = 2;
+  string recommendedProject = 3;
+  double quotedPrice = 4;
+}
+
+message TreatmentCreateRequest {
+  int32 customerId = 1;
+  int32 consultationId = 2;
+  int32 doctorId = 3;
+  int32 nurseId = 4;
+  int32 projectId = 5;
+  string productName = 6;
+  string dosage = 7;
+  string treatmentTime = 8;
+  string recoveryNotes = 9;
+  int32 rednessLevel = 10;
+  string customerFeedback = 11;
+  string nextTreatmentTime = 12;
+  int32 treatmentSequence = 13;
+  int32 totalTreatments = 14;
+}
+
+message TreatmentUpdateRequest {
+  int32 id = 1;
+  TreatmentCreateRequest treatment = 2;
+}
+
+message TreatmentList {
+  repeated Treatment treatments = 1;
+}

@@ -1,0 +1,97 @@
+syntax = "proto3";
+
+package consultation;
+
+service ConsultationService {
+  rpc FindAll (Empty) returns (ConsultationList) {}
+  rpc FindOne (ConsultationId) returns (Consultation) {}
+  rpc Create (ConsultationCreateRequest) returns (Consultation) {}
+  rpc Update (ConsultationUpdateRequest) returns (Consultation) {}
+  rpc Remove (ConsultationId) returns (Empty) {}
+  rpc FindByCustomer (CustomerId) returns (ConsultationList) {}
+  rpc FindByConsultant (ConsultantId) returns (ConsultationList) {}
+  rpc SearchByContent (SearchTerm) returns (ConsultationList) {}
+}
+
+message Empty {}
+
+message ConsultationId {
+  int32 id = 1;
+}
+
+message CustomerId {
+  int32 id = 1;
+}
+
+message ConsultantId {
+  int32 id = 1;
+}
+
+message SearchTerm {
+  string term = 1;
+}
+
+message Consultation {
+  int32 id = 1;
+  int32 customerId = 2;
+  int32 consultantId = 3;
+  string communicationContent = 4;
+  string recommendedProject = 5;
+  double quotedPrice = 6;
+  string communicationScreenshot = 7;
+  string referenceImage = 8;
+  string diagnosisContent = 9;
+  string skinTestResult = 10;
+  string aestheticDesign = 11;
+  string preoperativePhoto = 12;
+  string postoperativeSimulation = 13;
+  string consentForm = 14;
+  bool isConsentSigned = 15;
+  string createdAt = 16;
+  string updatedAt = 17;
+  Customer customer = 18;
+  Consultant consultant = 19;
+}
+
+message Consultant {
+  int32 id = 1;
+  string name = 2;
+  string email = 3;
+  string phone = 4;
+  string role = 5;
+}
+
+message Customer {
+  int32 id = 1;
+  string name = 2;
+  string gender = 3;
+  int32 age = 4;
+  string phone = 5;
+  string email = 6;
+}
+
+message ConsultationCreateRequest {
+  int32 customerId = 1;
+  int32 consultantId = 2;
+  string communicationContent = 3;
+  string recommendedProject = 4;
+  double quotedPrice = 5;
+  string communicationScreenshot = 6;
+  string referenceImage = 7;
+  string diagnosisContent = 8;
+  string skinTestResult = 9;
+  string aestheticDesign = 10;
+  string preoperativePhoto = 11;
+  string postoperativeSimulation = 12;
+  string consentForm = 13;
+  bool isConsentSigned = 14;
+}
+
+message ConsultationUpdateRequest {
+  int32 id = 1;
+  ConsultationCreateRequest consultation = 2;
+}
+
+message ConsultationList {
+  repeated Consultation consultations = 1;
+}

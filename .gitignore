@@ -1,0 +1,83 @@
+# 依赖目录
+node_modules/
+npm-debug.log
+yarn-debug.log
+yarn-error.log
+.pnpm-debug.log
+
+# 构建输出
+/dist
+/build
+/.next/
+/out/
+.nuxt
+.output
+backend/dist/
+frontend/dist/
+
+# 环境变量文件
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# 日志文件
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+backend.log
+frontend.log
+
+# 数据库文件
+*.sqlite
+*.sqlite3
+*.db
+
+# 操作系统文件
+.DS_Store
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# 编辑器目录和文件
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+.project
+.classpath
+.settings/
+*.sublime-workspace
+*.sublime-project
+
+# 测试覆盖率
+/coverage
+
+# 缓存目录
+.cache/
+.parcel-cache/
+.npm
+.eslintcache
+.stylelintcache
+.rpt2_cache/
+.rts2_cache_cjs/
+.rts2_cache_es/
+.rts2_cache_umd/
+
+# Next.js 特定文件
+.next/
+out/
+.vercel
+next-env.d.ts
+
+# NestJS 特定文件
+/dist
+/node_modules
+
+# 临时文件
+tmp/
+temp/

@@ -1,0 +1,81 @@
+syntax = "proto3";
+
+package customer;
+
+service CustomerService {
+  rpc FindAll (Empty) returns (CustomerList) {}
+  rpc FindOne (CustomerId) returns (Customer) {}
+  rpc Create (CustomerCreateRequest) returns (Customer) {}
+  rpc Update (CustomerUpdateRequest) returns (Customer) {}
+  rpc Remove (CustomerId) returns (Empty) {}
+  rpc FindByPhone (CustomerPhone) returns (Customer) {}
+  rpc SearchByName (CustomerName) returns (CustomerList) {}
+}
+
+message Empty {}
+
+message CustomerId {
+  int32 id = 1;
+}
+
+message CustomerPhone {
+  string phone = 1;
+}
+
+message CustomerName {
+  string name = 1;
+}
+
+message Customer {
+  int32 id = 1;
+  string name = 2;
+  string gender = 3;
+  int32 age = 4;
+  string phone = 5;
+  string email = 6;
+  string address = 7;
+  string source = 8;
+  string valueLevel = 9;
+  string consumptionLevel = 10;
+  string demandType = 11;
+  string allergyHistory = 12;
+  string contraindications = 13;
+  string consumptionPreference = 14;
+  int32 visitFrequency = 15;
+  int32 satisfactionScore = 16;
+  int32 relatedCustomerId = 17;
+  bool isEncrypted = 18;
+  int32 membershipId = 19;
+  string createdAt = 20;
+  string updatedAt = 21;
+}
+
+message CustomerCreateRequest {
+  string name = 1;
+  string gender = 2;
+  int32 age = 3;
+  string phone = 4;
+  string email = 5;
+  string address = 6;
+  string source = 7;
+  string valueLevel = 8;
+  string consumptionLevel = 9;
+  string demandType = 10;
+  string allergyHistory = 11;
+  string contraindications = 12;
+  string consumptionPreference = 13;
+  int32 visitFrequency = 14;
+  int32 satisfactionScore = 15;
+  int32 relatedCustomerId = 16;
+  bool isEncrypted = 17;
+  int32 membershipId = 18;
+}
+
+message CustomerUpdateRequest {
+  int32 id = 1;
+  CustomerCreateRequest customer = 2;
+}
+
+message CustomerList {
+  repeated Customer customers = 1;
+}

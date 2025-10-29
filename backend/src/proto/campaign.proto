@@ -1,0 +1,54 @@
+syntax = "proto3";
+
+package campaign;
+
+service CampaignService {
+  rpc FindAll (Empty) returns (CampaignList) {}
+  rpc FindOne (CampaignId) returns (Campaign) {}
+  rpc Create (CampaignCreateRequest) returns (Campaign) {}
+  rpc Update (CampaignUpdateRequest) returns (Campaign) {}
+  rpc Remove (CampaignId) returns (Empty) {}
+  rpc FindActiveCampaigns (Empty) returns (CampaignList) {}
+  rpc FindUpcomingCampaigns (Empty) returns (CampaignList) {}
+  rpc FindExpiredCampaigns (Empty) returns (CampaignList) {}
+}
+
+message Empty {}
+
+message CampaignId {
+  int32 id = 1;
+}
+
+message Campaign {
+  int32 id = 1;
+  string name = 2;
+  string description = 3;
+  string startDate = 4;
+  string endDate = 5;
+  string targetCustomerCriteria = 6;
+  double discountPercentage = 7;
+  double fixedDiscount = 8;
+  bool isActive = 9;
+  string createdAt = 10;
+  string updatedAt = 11;
+}
+
+message CampaignCreateRequest {
+  string name = 1;
+  string description = 2;
+  string startDate = 3;
+  string endDate = 4;
+  string targetCustomerCriteria = 5;
+  double discountPercentage = 6;
+  double fixedDiscount = 7;
+  bool isActive = 8;
+}
+
+message CampaignUpdateRequest {
+  int32 id = 1;
+  CampaignCreateRequest campaign = 2;
+}
+
+message CampaignList {
+  repeated Campaign campaigns = 1;
+}
