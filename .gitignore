@@ -32,7 +32,7 @@ backend.log
 frontend.log
 
 # 数据库文件
-*.sqlite
+# *.sqlite
 *.sqlite3
 *.db
 

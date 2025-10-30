@@ -52,138 +52,113 @@ export default function ConsultationsPage() {
 
   const fetchConsultations = async (page: number = 1) => {
     try {
+      console.log('Fetching consultations, page:', page);
+      // Fixed the URL to use the correct backend port
       const response = await fetch(`http://localhost:3001/consultations?page=${page}&limit=${limit}`);
+      console.log('Response status:', response.status);
       if (response.ok) {
         const paginatedData: PaginatedResponse<Consultation> = await response.json();
+        console.log('API data:', paginatedData);
         setConsultations(paginatedData.data);
-        setTotalPages(paginatedData.totalPages);
+        // Ensure all pagination values are numbers, not strings
+        setTotalPages(Number(paginatedData.totalPages));
         setTotalItems(paginatedData.total);
-        setCurrentPage(paginatedData.page);
+        setCurrentPage(Number(paginatedData.page));
       } else {
-        console.error('Failed to fetch consultations data');
+        console.error('Failed to fetch consultations data, status:', response.status);
         // 使用模拟数据作为备用
         const mockData = generateMockData();
-        setConsultations(mockData);
+        console.log('Generated mock data length:', mockData.length);
+        // 分页模拟数据
+        const startIndex = (page - 1) * limit;
+        const endIndex = startIndex + limit;
+        const paginatedMockData = mockData.slice(startIndex, endIndex);
+        console.log('Paginated mock data:', { startIndex, endIndex, length: paginatedMockData.length });
+        
+        setConsultations(paginatedMockData);
         // 设置模拟数据的分页状态
         setTotalItems(mockData.length);
         setTotalPages(Math.ceil(mockData.length / limit));
-        setCurrentPage(1);
+        setCurrentPage(page);
+        console.log('Set mock data pagination:', {
+          totalItems: mockData.length,
+          totalPages: Math.ceil(mockData.length / limit),
+          currentPage: page
+        });
       }
     } catch (error) {
       console.error('Error fetching consultations data:', error);
       // 使用模拟数据作为备用
       const mockData = generateMockData();
-      setConsultations(mockData);
+      console.log('Generated mock data (error case) length:', mockData.length);
+      // 分页模拟数据
+      const startIndex = (page - 1) * limit;
+      const endIndex = startIndex + limit;
+      const paginatedMockData = mockData.slice(startIndex, endIndex);
+      console.log('Paginated mock data (error case):', { startIndex, endIndex, length: paginatedMockData.length });
+      
+      setConsultations(paginatedMockData);
       // 设置模拟数据的分页状态
       setTotalItems(mockData.length);
       setTotalPages(Math.ceil(mockData.length / limit));
-      setCurrentPage(1);
+      setCurrentPage(page);
+      console.log('Set mock data pagination (error case):', {
+        totalItems: mockData.length,
+        totalPages: Math.ceil(mockData.length / limit),
+        currentPage: page
+      });
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
+    console.log('useEffect triggered, currentPage:', currentPage);
     fetchConsultations(currentPage);
   }, [currentPage]);
 
   const generateMockData = (): Consultation[] => {
-    const mockConsultations: Consultation[] = [
-      {
-        id: 1,
-        customerId: 1,
-        consultantId: 1,
-        communicationContent: 'Customer interested in anti-aging treatments',
-        recommendedProject: 'Skin Rejuvenation Package',
-        quotedPrice: 5000,
-        diagnosisContent: 'Good skin condition, minor wrinkles around eyes',
-        skinTestResult: 'Normal skin type, no allergies detected',
-        aestheticDesign: 'Botox injections for forehead lines',
-        isConsentSigned: true,
-        createdAt: '2023-06-15T10:00:00Z',
-        updatedAt: '2023-06-15T10:30:00Z',
-        customer: {
-          id: 1,
-          name: 'Alice Johnson',
-          gender: 'Female',
-          age: 32,
-          phone: '13800138001',
-          email: 'alice@example.com',
-        },
-        consultant: {
-          id: 1,
-          name: 'Dr. Zhang Wei',
-          email: 'zhangwei@hospital.com',
-          phone: '13800138011',
-          role: 'Senior Consultant',
-        },
+    // 生成更多模拟数据以测试分页
+    const mockConsultations: Consultation[] = Array.from({ length: 25 }, (_, i) => ({
+      id: i + 1,
+      customerId: (i % 3) + 1,
+      consultantId: (i % 3) + 1,
+      communicationContent: `Customer interested in anti-aging treatments - Consultation ${i + 1}`,
+      recommendedProject: `Skin Rejuvenation Package ${i + 1}`,
+      quotedPrice: 5000 + (i * 100),
+      diagnosisContent: `Good skin condition, minor wrinkles around eyes - Consultation ${i + 1}`,
+      skinTestResult: `Normal skin type, no allergies detected - Test ${i + 1}`,
+      aestheticDesign: `Botox injections for forehead lines - Design ${i + 1}`,
+      isConsentSigned: i % 2 === 0,
+      createdAt: new Date(Date.now() - Math.random() * 30 * 24 * 60 * 60 * 1000).toISOString(),
+      updatedAt: new Date(Date.now() - Math.random() * 7 * 24 * 60 * 60 * 1000).toISOString(),
+      customer: {
+        id: (i % 3) + 1,
+        name: `Customer ${(i % 3) + 1}`,
+        gender: i % 2 === 0 ? 'Female' : 'Male',
+        age: 25 + (i % 40),
+        phone: `1380013800${(i % 9) + 1}`,
+        email: `customer${(i % 3) + 1}@example.com`,
       },
-      {
-        id: 2,
-        customerId: 2,
-        consultantId: 2,
-        communicationContent: 'Follow-up for previous laser treatment',
-        recommendedProject: 'Laser Spot Removal',
-        quotedPrice: 2500,
-        diagnosisContent: 'Good healing progress from previous treatment',
-        skinTestResult: 'Sensitive skin, recommend gentle approach',
-        aestheticDesign: 'Fractional laser for spot removal',
-        isConsentSigned: false,
-        createdAt: '2023-06-16T14:30:00Z',
-        updatedAt: '2023-06-16T15:15:00Z',
-        customer: {
-          id: 2,
-          name: 'Bob Smith',
-          gender: 'Male',
-          age: 45,
-          phone: '13800138002',
-          email: 'bob@example.com',
-        },
-        consultant: {
-          id: 2,
-          name: 'Dr. Li Na',
-          email: 'lina@hospital.com',
-          phone: '13800138012',
-          role: 'Laser Specialist',
-        },
+      consultant: {
+        id: (i % 3) + 1,
+        name: `Dr. Consultant ${(i % 3) + 1}`,
+        email: `consultant${(i % 3) + 1}@hospital.com`,
+        phone: `1380013801${(i % 9) + 1}`,
+        role: 'Senior Consultant',
       },
-      {
-        id: 3,
-        customerId: 3,
-        consultantId: 3,
-        communicationContent: 'Recommended facial rejuvenation package',
-        recommendedProject: 'Comprehensive Facial Rejuvenation',
-        quotedPrice: 12000,
-        diagnosisContent: 'Multiple aging signs, comprehensive approach needed',
-        skinTestResult: 'Dry skin, recommend hydration treatments',
-        aestheticDesign: 'Hyaluronic acid fillers + laser therapy',
-        isConsentSigned: true,
-        createdAt: '2023-06-14T09:15:00Z',
-        updatedAt: '2023-06-14T10:15:00Z',
-        customer: {
-          id: 3,
-          name: 'Charlie Brown',
-          gender: 'Male',
-          age: 28,
-          phone: '13800138003',
-          email: 'charlie@example.com',
-        },
-        consultant: {
-          id: 3,
-          name: 'Dr. Wang Chen',
-          email: 'wangchen@hospital.com',
-          phone: '13800138013',
-          role: 'Aesthetic Director',
-        },
-      },
-    ];
+    }));
 
     return mockConsultations;
   };
 
   const handlePageChange = (page: number) => {
+    console.log('handlePageChange called with page:', page, 'totalPages:', totalPages);
     if (page >= 1 && page <= totalPages) {
+      console.log('Setting current page to:', page);
       setCurrentPage(page);
+    } else {
+      console.log('Page change rejected: page out of range');
     }
   };
 

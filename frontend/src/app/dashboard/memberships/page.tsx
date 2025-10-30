@@ -46,28 +46,39 @@ export default function MembershipsPage() {
       if (response.ok) {
         const paginatedData: PaginatedResponse<Membership> = await response.json();
         setMemberships(paginatedData.data);
-        setTotalPages(paginatedData.totalPages);
+        // Ensure all pagination values are numbers, not strings
+        setTotalPages(Number(paginatedData.totalPages));
         setTotalItems(paginatedData.total);
-        setCurrentPage(paginatedData.page);
+        setCurrentPage(Number(paginatedData.page));
       } else {
         console.error('Failed to fetch memberships data');
         // 使用模拟数据作为备用
         const mockData = generateMockData();
-        setMemberships(mockData);
+        // 分页模拟数据
+        const startIndex = (page - 1) * limit;
+        const endIndex = startIndex + limit;
+        const paginatedMockData = mockData.slice(startIndex, endIndex);
+        
+        setMemberships(paginatedMockData);
         // 设置模拟数据的分页状态
         setTotalItems(mockData.length);
         setTotalPages(Math.ceil(mockData.length / limit));
-        setCurrentPage(1);
+        setCurrentPage(page);
       }
     } catch (error) {
       console.error('Error fetching memberships data:', error);
       // 使用模拟数据作为备用
       const mockData = generateMockData();
-      setMemberships(mockData);
+      // 分页模拟数据
+      const startIndex = (page - 1) * limit;
+      const endIndex = startIndex + limit;
+      const paginatedMockData = mockData.slice(startIndex, endIndex);
+      
+      setMemberships(paginatedMockData);
       // 设置模拟数据的分页状态
       setTotalItems(mockData.length);
       setTotalPages(Math.ceil(mockData.length / limit));
-      setCurrentPage(1);
+      setCurrentPage(page);
     } finally {
       setLoading(false);
     }
@@ -83,10 +94,13 @@ export default function MembershipsPage() {
       'John Smith', 'Emma Johnson', 'Michael Brown', 'Olivia Davis', 'William Wilson',
       'Sophia Martinez', 'James Anderson', 'Isabella Taylor', 'Robert Thomas', 'Mia Garcia',
       'David Rodriguez', 'Charlotte Lewis', 'Joseph Lee', 'Amelia Walker', 'Daniel Hall',
-      'Evelyn Allen', 'Matthew Young', 'Abigail King', 'Andrew Wright', 'Elizabeth Scott'
+      'Evelyn Allen', 'Matthew Young', 'Abigail King', 'Andrew Wright', 'Elizabeth Scott',
+      'Christopher King', 'Madison Wright', 'Anthony Lopez', 'Victoria Hill', 'Andrew Scott',
+      'Samantha Green', 'Joshua Adams', 'Grace Nelson', 'Nicholas Baker', 'Hannah Carter',
+      'Ryan Mitchell', 'Lauren Perez', 'Tyler Roberts', 'Alyssa Turner', 'Brandon Phillips'
     ];
     
-    const mockMemberships = Array.from({ length: 20 }, (_, i) => {
+    const mockMemberships = Array.from({ length: 35 }, (_, i) => {
       const expiryDate = new Date();
       expiryDate.setMonth(expiryDate.getMonth() + Math.floor(Math.random() * 12) + 1);
       
@@ -233,7 +247,7 @@ export default function MembershipsPage() {
   return (
     <div className="p-6">
       <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold">Memberships</h1>
+        <h1 className="text-2xl font-bold text-gray-900">Memberships</h1>
         <Link href="/dashboard/memberships/new" className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md flex items-center">
           <PlusCircle className="mr-2 h-5 w-5" />
           Add New Membership

@@ -21,4 +21,17 @@ export class PaginatedResponseDto<T> {
         this.hasNext = page < this.totalPages;
         this.hasPrev = page > 1;
     }
+
+    // Ensure proper JSON serialization with correct types
+    toJSON() {
+        return {
+            data: this.data,
+            total: this.total,
+            page: this.page,  // This will be serialized as a number
+            limit: this.limit,  // This will be serialized as a number
+            totalPages: this.totalPages,
+            hasNext: this.hasNext,
+            hasPrev: this.hasPrev
+        };
+    }
 }

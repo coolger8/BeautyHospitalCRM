@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, Query } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, Query, ParseIntPipe } from '@nestjs/common';
 import { StaffService } from './staff.service';
 import { Staff } from '../../entities/staff.entity';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
@@ -12,7 +12,13 @@ export class StaffController {
 
   @Get()
   // @UseGuards(JwtAuthGuard)
-  async findAll(@Query() paginationDto?: PaginationDto): Promise<PaginatedResponseDto<Staff>> {
+  async findAll(
+    @Query('page', ParseIntPipe) page?: number,
+    @Query('limit', ParseIntPipe) limit?: number
+  ): Promise<PaginatedResponseDto<Staff>> {
+    const paginationDto = new PaginationDto();
+    if (page) paginationDto.page = page;
+    if (limit) paginationDto.limit = limit;
     return this.staffService.findAll(paginationDto);
   }
 

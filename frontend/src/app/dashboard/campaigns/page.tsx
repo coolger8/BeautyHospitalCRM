@@ -38,28 +38,39 @@ export default function CampaignsPage() {
       if (response.ok) {
         const paginatedData: PaginatedResponse<Campaign> = await response.json();
         setCampaigns(paginatedData.data);
-        setTotalPages(paginatedData.totalPages);
+        // Ensure all pagination values are numbers, not strings
+        setTotalPages(Number(paginatedData.totalPages));
         setTotalItems(paginatedData.total);
-        setCurrentPage(paginatedData.page);
+        setCurrentPage(Number(paginatedData.page));
       } else {
         console.error('Failed to fetch campaigns data');
         // 使用模拟数据作为备用
         const mockData = generateMockData();
-        setCampaigns(mockData);
+        // 分页模拟数据
+        const startIndex = (page - 1) * limit;
+        const endIndex = startIndex + limit;
+        const paginatedMockData = mockData.slice(startIndex, endIndex);
+        
+        setCampaigns(paginatedMockData);
         // 设置模拟数据的分页状态
         setTotalItems(mockData.length);
         setTotalPages(Math.ceil(mockData.length / limit));
-        setCurrentPage(1);
+        setCurrentPage(page);
       }
     } catch (error) {
       console.error('Error fetching campaigns data:', error);
       // 使用模拟数据作为备用
       const mockData = generateMockData();
-      setCampaigns(mockData);
+      // 分页模拟数据
+      const startIndex = (page - 1) * limit;
+      const endIndex = startIndex + limit;
+      const paginatedMockData = mockData.slice(startIndex, endIndex);
+      
+      setCampaigns(paginatedMockData);
       // 设置模拟数据的分页状态
       setTotalItems(mockData.length);
       setTotalPages(Math.ceil(mockData.length / limit));
-      setCurrentPage(1);
+      setCurrentPage(page);
     } finally {
       setLoading(false);
     }
@@ -241,7 +252,7 @@ export default function CampaignsPage() {
   return (
     <div className="p-6">
       <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold">Marketing Campaigns</h1>
+        <h1 className="text-2xl font-bold text-gray-900">Marketing Campaigns</h1>
         <Link href="/dashboard/campaigns/new" className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md flex items-center">
           <PlusCircle className="mr-2 h-5 w-5" />
           Create New Campaign

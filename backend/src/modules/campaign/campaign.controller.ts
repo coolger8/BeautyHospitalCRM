@@ -9,7 +9,13 @@ export class CampaignController {
   constructor(private readonly campaignService: CampaignService) { }
 
   @Get()
-  async findAll(@Query() paginationDto?: PaginationDto): Promise<PaginatedResponseDto<Campaign>> {
+  async findAll(
+    @Query('page', ParseIntPipe) page?: number,
+    @Query('limit', ParseIntPipe) limit?: number
+  ): Promise<PaginatedResponseDto<Campaign>> {
+    const paginationDto = new PaginationDto();
+    if (page) paginationDto.page = page;
+    if (limit) paginationDto.limit = limit;
     return await this.campaignService.findAll(paginationDto);
   }
 

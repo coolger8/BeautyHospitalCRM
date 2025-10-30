@@ -20,6 +20,8 @@ export default function LoginPage() {
       // 在实际应用中，这里应该调用后端API进行身份验证
       // 这里简单模拟登录过程
       if (username === 'admin' && password === 'admin') {
+        // Store a token in localStorage to indicate user is logged in
+        localStorage.setItem('token', 'admin-token');
         // 登录成功，跳转到仪表盘
         router.push('/dashboard');
       } else {

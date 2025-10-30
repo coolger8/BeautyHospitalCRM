@@ -53,28 +53,39 @@ export default function AppointmentsPage() {
       if (response.ok) {
         const paginatedData: PaginatedResponse<Appointment> = await response.json();
         setAppointments(paginatedData.data);
-        setTotalPages(paginatedData.totalPages);
+        // Ensure all pagination values are numbers, not strings
+        setTotalPages(Number(paginatedData.totalPages));
         setTotalItems(paginatedData.total);
-        setCurrentPage(paginatedData.page);
+        setCurrentPage(Number(paginatedData.page));
       } else {
         console.error('Failed to fetch appointments data');
         // 使用模拟数据作为备用
         const mockData = generateMockData();
-        setAppointments(mockData);
+        // 分页模拟数据
+        const startIndex = (page - 1) * limit;
+        const endIndex = startIndex + limit;
+        const paginatedMockData = mockData.slice(startIndex, endIndex);
+        
+        setAppointments(paginatedMockData);
         // 设置模拟数据的分页状态
         setTotalItems(mockData.length);
         setTotalPages(Math.ceil(mockData.length / limit));
-        setCurrentPage(1);
+        setCurrentPage(page);
       }
     } catch (error) {
       console.error('Error fetching appointments data:', error);
       // 使用模拟数据作为备用
       const mockData = generateMockData();
-      setAppointments(mockData);
+      // 分页模拟数据
+      const startIndex = (page - 1) * limit;
+      const endIndex = startIndex + limit;
+      const paginatedMockData = mockData.slice(startIndex, endIndex);
+      
+      setAppointments(paginatedMockData);
       // 设置模拟数据的分页状态
       setTotalItems(mockData.length);
       setTotalPages(Math.ceil(mockData.length / limit));
-      setCurrentPage(1);
+      setCurrentPage(page);
     } finally {
       setLoading(false);
     }
@@ -85,112 +96,33 @@ export default function AppointmentsPage() {
   }, [currentPage]);
 
   const generateMockData = (): Appointment[] => {
-    const mockAppointments: Appointment[] = [
-      {
-        id: 1,
-        customerId: 1,
-        assignedStaffId: 1,
-        projectId: 1,
-        scheduledTime: '2023-06-15T10:00:00',
-        status: 'scheduled',
-        notes: 'Customer needs special care',
-        createdAt: '2023-06-01T00:00:00',
-        updatedAt: '2023-06-01T00:00:00',
-        customer: {
-          id: 1,
-          name: 'John Smith',
-          gender: 'Male',
-          age: 30,
-          phone: '13800138000',
-          email: 'john@example.com'
-        },
-        assignedStaff: {
-          id: 1,
-          name: 'Dr. Lee',
-          email: 'lee@beautyhospital.com',
-          phone: '13800138001',
-          role: 'doctor'
-        }
+    // 生成更多模拟数据以测试分页
+    const mockAppointments: Appointment[] = Array.from({ length: 25 }, (_, i) => ({
+      id: i + 1,
+      customerId: (i % 5) + 1,
+      assignedStaffId: (i % 3) + 1,
+      projectId: (i % 4) + 1,
+      scheduledTime: new Date(Date.now() + Math.random() * 30 * 24 * 60 * 60 * 1000).toISOString(),
+      status: ['scheduled', 'pending', 'completed', 'cancelled'][i % 4],
+      notes: `Appointment notes for appointment ${i + 1}`,
+      createdAt: new Date(Date.now() - Math.random() * 30 * 24 * 60 * 60 * 1000).toISOString(),
+      updatedAt: new Date(Date.now() - Math.random() * 7 * 24 * 60 * 60 * 1000).toISOString(),
+      customer: {
+        id: (i % 5) + 1,
+        name: `Customer ${(i % 5) + 1}`,
+        gender: i % 2 === 0 ? 'Female' : 'Male',
+        age: 20 + (i % 50),
+        phone: `1380013800${(i % 9) + 1}`,
+        email: `customer${(i % 5) + 1}@example.com`
       },
-      {
-        id: 2,
-        customerId: 2,
-        assignedStaffId: 2,
-        projectId: 2,
-        scheduledTime: '2023-06-16T14:30:00',
-        status: 'pending',
-        notes: 'First treatment',
-        createdAt: '2023-06-02T00:00:00',
-        updatedAt: '2023-06-02T00:00:00',
-        customer: {
-          id: 2,
-          name: 'Emily Johnson',
-          gender: 'Female',
-          age: 25,
-          phone: '13800138002',
-          email: 'emily@example.com'
-        },
-        assignedStaff: {
-          id: 2,
-          name: 'Dr. Wang',
-          email: 'wang@beautyhospital.com',
-          phone: '13800138003',
-          role: 'doctor'
-        }
-      },
-      {
-        id: 3,
-        customerId: 3,
-        assignedStaffId: 3,
-        projectId: 3,
-        scheduledTime: '2023-06-14T09:15:00',
-        status: 'completed',
-        notes: 'Customer very satisfied with service',
-        createdAt: '2023-06-03T00:00:00',
-        updatedAt: '2023-06-03T00:00:00',
-        customer: {
-          id: 3,
-          name: 'Michael Brown',
-          gender: 'Male',
-          age: 35,
-          phone: '13800138004',
-          email: 'michael@example.com'
-        },
-        assignedStaff: {
-          id: 3,
-          name: 'Dr. Zhao',
-          email: 'zhao@beautyhospital.com',
-          phone: '13800138005',
-          role: 'doctor'
-        }
-      },
-      {
-        id: 4,
-        customerId: 1,
-        assignedStaffId: 1,
-        projectId: 4,
-        scheduledTime: '2023-06-20T11:00:00',
-        status: 'scheduled',
-        notes: 'Check treatment results',
-        createdAt: '2023-06-04T00:00:00',
-        updatedAt: '2023-06-04T00:00:00',
-        customer: {
-          id: 1,
-          name: 'John Smith',
-          gender: 'Male',
-          age: 30,
-          phone: '13800138000',
-          email: 'john@example.com'
-        },
-        assignedStaff: {
-          id: 1,
-          name: 'Dr. Lee',
-          email: 'lee@beautyhospital.com',
-          phone: '13800138001',
-          role: 'doctor'
-        }
-      },
-    ];
+      assignedStaff: {
+        id: (i % 3) + 1,
+        name: `Staff ${(i % 3) + 1}`,
+        email: `staff${(i % 3) + 1}@beautyhospital.com`,
+        phone: `1380013801${(i % 9) + 1}`,
+        role: ['doctor', 'nurse', 'consultant'][i % 3]
+      }
+    }));
 
     return mockAppointments;
   };

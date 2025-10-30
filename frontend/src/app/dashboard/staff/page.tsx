@@ -36,24 +36,39 @@ export default function StaffPage() {
       if (response.ok) {
         const paginatedData: PaginatedResponse<Staff> = await response.json();
         setStaff(paginatedData.data);
-        setTotalPages(paginatedData.totalPages);
+        // Ensure all pagination values are numbers, not strings
+        setTotalPages(Number(paginatedData.totalPages));
         setTotalItems(paginatedData.total);
-        setCurrentPage(paginatedData.page);
+        setCurrentPage(Number(paginatedData.page));
       } else {
         console.error('Failed to fetch staff data');
         // 使用模拟数据作为备用
         const mockData: Staff[] = generateMockData();
-        setStaff(mockData);
+        // 分页模拟数据
+        const startIndex = (page - 1) * limit;
+        const endIndex = startIndex + limit;
+        const paginatedMockData = mockData.slice(startIndex, endIndex);
+        
+        setStaff(paginatedMockData);
+        // 设置模拟数据的分页状态
+        setTotalItems(mockData.length);
+        setTotalPages(Math.ceil(mockData.length / limit));
+        setCurrentPage(page);
       }
     } catch (error) {
       console.error('Error fetching staff data:', error);
       // 使用模拟数据作为备用
       const mockData: Staff[] = generateMockData();
-      setStaff(mockData);
+      // 分页模拟数据
+      const startIndex = (page - 1) * limit;
+      const endIndex = startIndex + limit;
+      const paginatedMockData = mockData.slice(startIndex, endIndex);
+      
+      setStaff(paginatedMockData);
       // 设置模拟数据的分页状态
       setTotalItems(mockData.length);
       setTotalPages(Math.ceil(mockData.length / limit));
-      setCurrentPage(1);
+      setCurrentPage(page);
     } finally {
       setLoading(false);
     }
@@ -65,7 +80,7 @@ export default function StaffPage() {
 
   const generateMockData = (): Staff[] => {
     const roles = ['consultant', 'doctor', 'nurse', 'admin'];
-    const mockStaff = Array.from({ length: 20 }, (_, i) => ({
+    const mockStaff = Array.from({ length: 35 }, (_, i) => ({
       id: i + 1,
       name: `Staff Member ${i + 1}`,
       email: `staff${i + 1}@example.com`,
@@ -186,7 +201,7 @@ export default function StaffPage() {
   return (
     <div className="p-6">
       <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold">Staff Management</h1>
+        <h1 className="text-2xl font-bold text-gray-900">Staff Management</h1>
         <Link href="/dashboard/staff/new" className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md flex items-center">
           <PlusCircle className="mr-2 h-5 w-5" />
           Add New Staff

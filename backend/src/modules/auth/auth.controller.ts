@@ -1,4 +1,4 @@
-import { Controller, Post, Get, Body, Param, ParseIntPipe, Put, UseGuards } from '@nestjs/common';
+import { Controller, Post, Get, Body, Param, ParseIntPipe, Put, UseGuards, Req } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { Staff } from '../../entities/staff.entity';
 import { StaffRole } from '../../entities/staff.entity';
@@ -17,6 +17,14 @@ export class AuthController {
       return { message: 'Invalid credentials' };
     }
     return this.authService.login(staff);
+  }
+
+  @Post('logout')
+  @UseGuards(JwtAuthGuard)
+  async logout(@Req() req: any) {
+    // In a real application, you might want to blacklist the token
+    // For now, we'll just return a success message
+    return { message: 'Successfully logged out' };
   }
 
   @Post('register')

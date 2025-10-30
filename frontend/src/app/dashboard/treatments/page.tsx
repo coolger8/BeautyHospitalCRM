@@ -76,28 +76,39 @@ export default function TreatmentsPage() {
       if (response.ok) {
         const paginatedData: PaginatedResponse<Treatment> = await response.json();
         setTreatments(paginatedData.data);
-        setTotalPages(paginatedData.totalPages);
+        // Ensure all pagination values are numbers, not strings
+        setTotalPages(Number(paginatedData.totalPages));
         setTotalItems(paginatedData.total);
-        setCurrentPage(paginatedData.page);
+        setCurrentPage(Number(paginatedData.page));
       } else {
         console.error('Failed to fetch treatments data');
         // 使用模拟数据作为备用
         const mockData = generateMockData();
-        setTreatments(mockData);
+        // 分页模拟数据
+        const startIndex = (page - 1) * limit;
+        const endIndex = startIndex + limit;
+        const paginatedMockData = mockData.slice(startIndex, endIndex);
+        
+        setTreatments(paginatedMockData);
         // 设置模拟数据的分页状态
         setTotalItems(mockData.length);
         setTotalPages(Math.ceil(mockData.length / limit));
-        setCurrentPage(1);
+        setCurrentPage(page);
       }
     } catch (error) {
       console.error('Error fetching treatments data:', error);
       // 使用模拟数据作为备用
       const mockData = generateMockData();
-      setTreatments(mockData);
+      // 分页模拟数据
+      const startIndex = (page - 1) * limit;
+      const endIndex = startIndex + limit;
+      const paginatedMockData = mockData.slice(startIndex, endIndex);
+      
+      setTreatments(paginatedMockData);
       // 设置模拟数据的分页状态
       setTotalItems(mockData.length);
       setTotalPages(Math.ceil(mockData.length / limit));
-      setCurrentPage(1);
+      setCurrentPage(page);
     } finally {
       setLoading(false);
     }
@@ -108,106 +119,56 @@ export default function TreatmentsPage() {
   }, [currentPage]);
 
   const generateMockData = (): Treatment[] => {
-    const mockTreatments: Treatment[] = [
-      {
-        id: 1,
-        customerId: 1,
-        consultationId: 1,
-        doctorId: 3,
-        nurseId: 4,
-        projectId: 1,
-        productName: 'Hydration Injection',
-        dosage: '10ml',
-        treatmentTime: '2025-10-29T10:00:00.000Z',
-        recoveryNotes: 'Patient responded well to treatment',
-        rednessLevel: 2,
-        customerFeedback: 'Very satisfied with the results',
-        nextTreatmentTime: '2025-11-05T10:00:00.000Z',
-        treatmentSequence: 1,
-        totalTreatments: 6,
-        createdAt: '2025-10-29T10:00:00.000Z',
-        updatedAt: '2025-10-29T10:00:00.000Z',
-        customer: {
-          id: 1,
-          name: 'Alice',
-          gender: 'Female',
-          age: 20,
-          phone: '13800138000',
-          email: 'alice@example.com'
-        },
-        consultation: {
-          id: 1,
-          customerId: 1,
-          consultantId: 2,
-          communicationContent: 'Initial consultation',
-          recommendedProject: 'Skin Hydration',
-          quotedPrice: 1200
-        },
-        doctor: {
-          id: 3,
-          name: 'Doctor Li',
-          email: 'li@beautyhospital.com',
-          phone: '13800138002',
-          role: 'doctor'
-        },
-        nurse: {
-          id: 4,
-          name: 'Nurse Wang',
-          email: 'wang@beautyhospital.com',
-          phone: '13800138003',
-          role: 'nurse'
-        }
+    // 生成更多模拟数据以测试分页
+    const mockTreatments: Treatment[] = Array.from({ length: 25 }, (_, i) => ({
+      id: i + 1,
+      customerId: (i % 5) + 1,
+      consultationId: (i % 4) + 1,
+      doctorId: (i % 3) + 1,
+      nurseId: (i % 2) + 1,
+      projectId: (i % 6) + 1,
+      productName: `Treatment Product ${i + 1}`,
+      dosage: `${10 + (i % 20)}ml`,
+      treatmentTime: new Date(Date.now() + Math.random() * 30 * 24 * 60 * 60 * 1000).toISOString(),
+      recoveryNotes: `Recovery notes for treatment ${i + 1}`,
+      rednessLevel: Math.floor(Math.random() * 5) + 1,
+      customerFeedback: `Customer feedback for treatment ${i + 1}`,
+      nextTreatmentTime: i % 3 === 0 ? null : new Date(Date.now() + (i * 7 * 24 * 60 * 60 * 1000)).toISOString(),
+      treatmentSequence: (i % 6) + 1,
+      totalTreatments: 6,
+      createdAt: new Date(Date.now() - Math.random() * 30 * 24 * 60 * 60 * 1000).toISOString(),
+      updatedAt: new Date(Date.now() - Math.random() * 7 * 24 * 60 * 60 * 1000).toISOString(),
+      customer: {
+        id: (i % 5) + 1,
+        name: `Customer ${(i % 5) + 1}`,
+        gender: i % 2 === 0 ? 'Female' : 'Male',
+        age: 20 + (i % 50),
+        phone: `1380013800${(i % 9) + 1}`,
+        email: `customer${(i % 5) + 1}@example.com`
       },
-      {
-        id: 2,
-        customerId: 2,
-        consultationId: 2,
-        doctorId: 3,
-        nurseId: 4,
-        projectId: 2,
-        productName: 'Laser Spot Removal',
-        dosage: '15ml',
-        treatmentTime: '2025-10-28T14:00:00.000Z',
-        recoveryNotes: 'Mild redness observed',
-        rednessLevel: 4,
-        customerFeedback: 'Good experience',
-        nextTreatmentTime: null,
-        treatmentSequence: 2,
-        totalTreatments: 4,
-        createdAt: '2025-10-28T14:00:00.000Z',
-        updatedAt: '2025-10-28T14:00:00.000Z',
-        customer: {
-          id: 2,
-          name: 'Bob',
-          gender: 'Male',
-          age: 21,
-          phone: '13800138001',
-          email: 'bob@example.com'
-        },
-        consultation: {
-          id: 2,
-          customerId: 2,
-          consultantId: 2,
-          communicationContent: 'Follow-up consultation',
-          recommendedProject: 'Spot Removal',
-          quotedPrice: 2500
-        },
-        doctor: {
-          id: 3,
-          name: 'Doctor Li',
-          email: 'li@beautyhospital.com',
-          phone: '13800138002',
-          role: 'doctor'
-        },
-        nurse: {
-          id: 4,
-          name: 'Nurse Wang',
-          email: 'wang@beautyhospital.com',
-          phone: '13800138003',
-          role: 'nurse'
-        }
+      consultation: {
+        id: (i % 4) + 1,
+        customerId: (i % 5) + 1,
+        consultantId: (i % 3) + 1,
+        communicationContent: `Consultation content ${i + 1}`,
+        recommendedProject: `Recommended project ${i + 1}`,
+        quotedPrice: 1000 + (i * 100)
+      },
+      doctor: {
+        id: (i % 3) + 1,
+        name: `Doctor ${(i % 3) + 1}`,
+        email: `doctor${(i % 3) + 1}@beautyhospital.com`,
+        phone: `1380013801${(i % 9) + 1}`,
+        role: 'doctor'
+      },
+      nurse: {
+        id: (i % 2) + 1,
+        name: `Nurse ${(i % 2) + 1}`,
+        email: `nurse${(i % 2) + 1}@beautyhospital.com`,
+        phone: `1380013802${(i % 9) + 1}`,
+        role: 'nurse'
       }
-    ];
+    }));
 
     return mockTreatments;
   };

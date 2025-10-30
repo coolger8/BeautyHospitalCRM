@@ -1,7 +1,8 @@
 'use client';
 
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
+import { useEffect, useState } from 'react';
 
 export default function DashboardLayout({
   children,
@@ -9,6 +10,20 @@ export default function DashboardLayout({
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
+  const router = useRouter();
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
+
+  useEffect(() => {
+    // Check if we're in browser environment before accessing localStorage
+    if (typeof window !== 'undefined') {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        router.push('/login');
+      } else {
+        setIsAuthenticated(true);
+      }
+    }
+  }, [router]);
 
   const navigation = [
     { name: 'Dashboard', href: '/dashboard' },
@@ -21,6 +36,45 @@ export default function DashboardLayout({
     { name: 'Orders', href: '/dashboard/orders' },
     { name: 'Staff', href: '/dashboard/staff' },
   ];
+
+  const handleLogout = async () => {
+    try {
+      // Call the logout API endpoint
+      if (typeof window !== 'undefined') {
+        const token = localStorage.getItem('token');
+        if (token) {
+          await fetch('http://localhost:3001/auth/logout', {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${token}`,
+              'Content-Type': 'application/json',
+            },
+          });
+        }
+        
+        // Remove token from localStorage
+        localStorage.removeItem('token');
+      }
+      // Redirect to login page
+      router.push('/login');
+    } catch (error) {
+      console.error('Logout error:', error);
+      // Even if the API call fails, still remove the token and redirect
+      if (typeof window !== 'undefined') {
+        localStorage.removeItem('token');
+      }
+      router.push('/login');
+    }
+  };
+
+  // Don't render the layout until we've checked authentication
+  if (isAuthenticated === null) {
+    return null; // Or a loading spinner
+  }
+
+  if (isAuthenticated === false || (typeof window !== 'undefined' && !localStorage.getItem('token'))) {
+    return null;
+  }
 
   return (
     <div className="flex h-screen bg-gray-50">
@@ -64,6 +118,15 @@ export default function DashboardLayout({
                   <p className="text-sm font-medium text-gray-700">Admin User</p>
                 </div>
               </div>
+              <button 
+                onClick={handleLogout}
+                className="ml-4 bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-md text-sm font-medium flex items-center"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                </svg>
+                Logout
+              </button>
             </div>
           </div>
         </header>

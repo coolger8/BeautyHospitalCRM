@@ -72,28 +72,39 @@ export default function OrdersPage() {
       if (response.ok) {
         const paginatedData: PaginatedResponse<Order> = await response.json();
         setOrders(paginatedData.data);
-        setTotalPages(paginatedData.totalPages);
+        // Ensure all pagination values are numbers, not strings
+        setTotalPages(Number(paginatedData.totalPages));
         setTotalItems(paginatedData.total);
-        setCurrentPage(paginatedData.page);
+        setCurrentPage(Number(paginatedData.page));
       } else {
         console.error('Failed to fetch orders data');
         // 使用模拟数据作为备用
         const mockData = generateMockData();
-        setOrders(mockData);
+        // 分页模拟数据
+        const startIndex = (page - 1) * limit;
+        const endIndex = startIndex + limit;
+        const paginatedMockData = mockData.slice(startIndex, endIndex);
+        
+        setOrders(paginatedMockData);
         // 设置模拟数据的分页状态
         setTotalItems(mockData.length);
         setTotalPages(Math.ceil(mockData.length / limit));
-        setCurrentPage(1);
+        setCurrentPage(page);
       }
     } catch (error) {
       console.error('Error fetching orders data:', error);
       // 使用模拟数据作为备用
       const mockData = generateMockData();
-      setOrders(mockData);
+      // 分页模拟数据
+      const startIndex = (page - 1) * limit;
+      const endIndex = startIndex + limit;
+      const paginatedMockData = mockData.slice(startIndex, endIndex);
+      
+      setOrders(paginatedMockData);
       // 设置模拟数据的分页状态
       setTotalItems(mockData.length);
       setTotalPages(Math.ceil(mockData.length / limit));
-      setCurrentPage(1);
+      setCurrentPage(page);
     } finally {
       setLoading(false);
     }
@@ -108,7 +119,10 @@ export default function OrdersPage() {
       'John Smith', 'Emma Johnson', 'Michael Brown', 'Olivia Davis', 'William Wilson',
       'Sophia Martinez', 'James Anderson', 'Isabella Taylor', 'Robert Thomas', 'Mia Garcia',
       'David Rodriguez', 'Charlotte Lewis', 'Joseph Lee', 'Amelia Walker', 'Daniel Hall',
-      'Evelyn Allen', 'Matthew Young', 'Abigail King', 'Andrew Wright', 'Elizabeth Scott'
+      'Evelyn Allen', 'Matthew Young', 'Abigail King', 'Andrew Wright', 'Elizabeth Scott',
+      'Christopher King', 'Madison Wright', 'Anthony Lopez', 'Victoria Hill', 'Andrew Scott',
+      'Samantha Green', 'Joshua Adams', 'Grace Nelson', 'Nicholas Baker', 'Hannah Carter',
+      'Ryan Mitchell', 'Lauren Perez', 'Tyler Roberts', 'Alyssa Turner', 'Brandon Phillips'
     ];
     
     const projectNames = [
@@ -116,7 +130,11 @@ export default function OrdersPage() {
       'Dermal Fillers', 'Chemical Peel', 'Microdermabrasion', 'Acne Treatment',
       'Anti-aging Package', 'Hydrafacial', 'Body Contouring', 'Scar Reduction',
       'Skin Tightening', 'Lip Enhancement', 'Eye Treatment', 'Neck Rejuvenation',
-      'Full Face Makeover', 'Skin Analysis', 'Customized Facial', 'Wellness Package'
+      'Full Face Makeover', 'Skin Analysis', 'Customized Facial', 'Wellness Package',
+      'Laser Resurfacing', 'Cellulite Treatment', 'Stretch Mark Removal', 'Pigmentation Treatment',
+      'Rosacea Treatment', 'Sensitive Skin Care', 'Men\'s Facial', 'Teen Acne Solution',
+      'Post-Surgery Care', 'Maintenance Package', 'Signature Facial', 'Advanced Peeling',
+      'Radiofrequency Treatment', 'LED Light Therapy', 'Oxygen Infusion'
     ];
     
     const consultantNames = [
@@ -124,13 +142,17 @@ export default function OrdersPage() {
       'Consultant Liu', 'Consultant Chen', 'Consultant Yang', 'Consultant Huang',
       'Consultant Zhou', 'Consultant Wu', 'Consultant Zheng', 'Consultant Sun',
       'Consultant Ma', 'Consultant Zhu', 'Consultant Hu', 'Consultant Lin',
-      'Consultant Guo', 'Consultant Gao', 'Consultant He', 'Consultant Tang'
+      'Consultant Guo', 'Consultant Gao', 'Consultant He', 'Consultant Tang',
+      'Consultant Luo', 'Consultant Hao', 'Consultant Peng', 'Consultant Han',
+      'Consultant Wang', 'Consultant Cao', 'Consultant Xu', 'Consultant Fu',
+      'Consultant Song', 'Consultant Deng', 'Consultant Xie', 'Consultant Han',
+      'Consultant Feng', 'Consultant Du', 'Consultant Jiang'
     ];
     
     const statuses = ['pending_payment', 'paid', 'completed', 'refunded'];
     const paymentMethods = ['wechat', 'alipay', 'card', 'cash'];
     
-    const mockOrders = Array.from({ length: 20 }, (_, i) => {
+    const mockOrders = Array.from({ length: 35 }, (_, i) => {
       const amount = Math.floor(Math.random() * 10000) + 500;
       const discountAmount = Math.floor(Math.random() * 500);
       const finalAmount = amount - discountAmount;
@@ -141,9 +163,9 @@ export default function OrdersPage() {
       
       return {
         id: i + 1,
-        customerId: i + 1,
-        projectId: i + 1,
-        consultantId: i + 1,
+        customerId: (i % 20) + 1,
+        projectId: (i % 20) + 1,
+        consultantId: (i % 20) + 1,
         status: statuses[Math.floor(Math.random() * statuses.length)],
         paymentMethod: paymentMethods[Math.floor(Math.random() * paymentMethods.length)],
         amount,
@@ -154,26 +176,26 @@ export default function OrdersPage() {
         createdAt: createdAt.toISOString(),
         updatedAt: createdAt.toISOString(),
         customer: {
-          id: i + 1,
-          name: customerNames[i],
+          id: (i % 20) + 1,
+          name: customerNames[i % 20],
           gender: Math.random() > 0.5 ? 'Male' : 'Female',
           age: Math.floor(Math.random() * 50) + 20,
-          phone: `13800138${i.toString().padStart(3, '0')}`,
-          email: `customer${i}@example.com`
+          phone: `13800138${(i % 20).toString().padStart(3, '0')}`,
+          email: `customer${i % 20}@example.com`
         },
         project: {
-          id: i + 1,
-          name: projectNames[i],
-          description: `Description for ${projectNames[i]}`,
+          id: (i % 20) + 1,
+          name: projectNames[i % 20],
+          description: `Description for ${projectNames[i % 20]}`,
           category: 'skin_care',
           basePrice: amount + 100,
           isActive: true
         },
         consultant: {
-          id: i + 1,
-          name: consultantNames[i],
-          email: `consultant${i}@beautyhospital.com`,
-          phone: `13800138${i.toString().padStart(3, '0')}`,
+          id: (i % 20) + 1,
+          name: consultantNames[i % 20],
+          email: `consultant${i % 20}@beautyhospital.com`,
+          phone: `13800138${(i % 20).toString().padStart(3, '0')}`,
           role: 'consultant'
         },
         discountApprover: Math.random() > 0.7 ? {
@@ -309,7 +331,7 @@ export default function OrdersPage() {
   return (
     <div className="p-6">
       <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold">Orders</h1>
+        <h1 className="text-2xl font-bold text-gray-900">Orders</h1>
         <Link href="/dashboard/orders/new" className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md flex items-center">
           <PlusCircle className="mr-2 h-5 w-5" />
           Create New Order

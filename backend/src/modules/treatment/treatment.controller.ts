@@ -9,7 +9,13 @@ export class TreatmentController {
   constructor(private readonly treatmentService: TreatmentService) { }
 
   @Get()
-  async findAll(@Query() paginationDto?: PaginationDto): Promise<PaginatedResponseDto<Treatment>> {
+  async findAll(
+    @Query('page', ParseIntPipe) page?: number,
+    @Query('limit', ParseIntPipe) limit?: number
+  ): Promise<PaginatedResponseDto<Treatment>> {
+    const paginationDto = new PaginationDto();
+    if (page) paginationDto.page = page;
+    if (limit) paginationDto.limit = limit;
     return await this.treatmentService.findAll(paginationDto);
   }
 

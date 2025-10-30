@@ -1,8 +1,10 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 
 export default function Dashboard() {
+  const router = useRouter();
   const [stats, setStats] = useState({
     totalCustomers: 0,
     totalAppointments: 0,
@@ -11,6 +13,13 @@ export default function Dashboard() {
   });
 
   useEffect(() => {
+    // Check if user is authenticated
+    const token = localStorage.getItem('token');
+    if (!token) {
+      router.push('/login');
+      return;
+    }
+
     // In a real app, this would fetch data from the backend
     setStats({
       totalCustomers: 124,
@@ -18,7 +27,7 @@ export default function Dashboard() {
       totalRevenue: 12450,
       activeCampaigns: 3,
     });
-  }, []);
+  }, [router]);
 
   return (
     <div>

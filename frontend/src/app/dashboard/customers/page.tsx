@@ -50,9 +50,10 @@ export default function CustomersPage() {
       if (response.ok) {
         const paginatedData: PaginatedResponse<Customer> = await response.json();
         setCustomers(paginatedData.data);
-        setTotalPages(paginatedData.totalPages);
+        // Ensure all pagination values are numbers, not strings
+        setTotalPages(Number(paginatedData.totalPages));
         setTotalItems(paginatedData.total);
-        setCurrentPage(paginatedData.page);
+        setCurrentPage(Number(paginatedData.page));
       } else {
         console.error('Failed to fetch customers data');
         // 使用模拟数据作为备用
@@ -193,7 +194,6 @@ export default function CustomersPage() {
           {pages}
           <button
             onClick={() => {
-              console.log('Next button clicked - currentPage:', currentPage, 'totalPages:', totalPages);
               handlePageChange(currentPage + 1);
             }}
             disabled={currentPage >= totalPages}
@@ -201,10 +201,6 @@ export default function CustomersPage() {
           >
             Next
           </button>
-        </div>
-        {/* 调试信息 */}
-        <div className="text-xs text-gray-500">
-          Debug: Page {currentPage}/{totalPages}
         </div>
       </div>
     );

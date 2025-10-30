@@ -9,8 +9,12 @@ export class CustomerController {
 
   @Get()
   async findAll(
-    @Query() paginationDto: PaginationDto
+    @Query('page', ParseIntPipe) page?: number,
+    @Query('limit', ParseIntPipe) limit?: number
   ): Promise<PaginatedResponseDto<Customer>> {
+    const paginationDto = new PaginationDto();
+    if (page) paginationDto.page = page;
+    if (limit) paginationDto.limit = limit;
     return await this.customerService.findAll(paginationDto);
   }
 
