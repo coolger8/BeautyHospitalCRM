@@ -1,53 +1,26 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { PlusCircle, Eye, Edit, Trash2, CheckCircle } from 'lucide-react';
+import { PlusCircle, Eye, Edit, Trash2 } from 'lucide-react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { useLanguage } from '@/lib/i18n/LanguageContext';
 
 interface Order {
   id: number;
   customerId: number;
+  customerName?: string;
   projectId: number;
+  projectName?: string;
   consultantId: number;
+  consultantName?: string;
   status: string;
   paymentMethod: string;
   amount: number;
   discountAmount: number;
   finalAmount: number;
-  discountApproverId: number | null;
-  notes: string;
   createdAt: string;
   updatedAt: string;
-  customer: {
-    id: number;
-    name: string;
-    gender: string;
-    age: number;
-    phone: string;
-    email: string;
-  };
-  project: {
-    id: number;
-    name: string;
-    description: string;
-    category: string;
-    basePrice: number;
-    isActive: boolean;
-  };
-  consultant: {
-    id: number;
-    name: string;
-    email: string;
-    phone: string;
-    role: string;
-  };
-  discountApprover: {
-    id: number;
-    name: string;
-    email: string;
-    phone: string;
-    role: string;
-  } | null;
 }
 
 interface PaginatedResponse<T> {
@@ -59,6 +32,8 @@ interface PaginatedResponse<T> {
 }
 
 export default function OrdersPage() {
+  const router = useRouter();
+  const { t } = useLanguage();
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
@@ -68,7 +43,15 @@ export default function OrdersPage() {
 
   const fetchOrders = async (page: number = 1) => {
     try {
-      const response = await fetch(`http://localhost:3001/orders?page=${page}&limit=${limit}`);
+      // Get token from localStorage
+      const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+      
+      const response = await fetch(`http://localhost:3001/orders?page=${page}&limit=${limit}`, {
+        headers: {
+          ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
+        },
+      });
+      
       if (response.ok) {
         const paginatedData: PaginatedResponse<Order> = await response.json();
         setOrders(paginatedData.data);
@@ -78,8 +61,19 @@ export default function OrdersPage() {
         setCurrentPage(Number(paginatedData.page));
       } else {
         console.error('Failed to fetch orders data');
+        
+        // If unauthorized, redirect to login
+        if (response.status === 401) {
+          alert('Authentication failed. Please log in again.');
+          if (typeof window !== 'undefined') {
+            localStorage.removeItem('token');
+          }
+          router.push('/login');
+          return;
+        }
+        
         // 使用模拟数据作为备用
-        const mockData = generateMockData();
+        const mockData: Order[] = generateMockData();
         // 分页模拟数据
         const startIndex = (page - 1) * limit;
         const endIndex = startIndex + limit;
@@ -94,7 +88,7 @@ export default function OrdersPage() {
     } catch (error) {
       console.error('Error fetching orders data:', error);
       // 使用模拟数据作为备用
-      const mockData = generateMockData();
+      const mockData: Order[] = generateMockData();
       // 分页模拟数据
       const startIndex = (page - 1) * limit;
       const endIndex = startIndex + limit;
@@ -115,99 +109,25 @@ export default function OrdersPage() {
   }, [currentPage]);
 
   const generateMockData = (): Order[] => {
-    const customerNames = [
-      'John Smith', 'Emma Johnson', 'Michael Brown', 'Olivia Davis', 'William Wilson',
-      'Sophia Martinez', 'James Anderson', 'Isabella Taylor', 'Robert Thomas', 'Mia Garcia',
-      'David Rodriguez', 'Charlotte Lewis', 'Joseph Lee', 'Amelia Walker', 'Daniel Hall',
-      'Evelyn Allen', 'Matthew Young', 'Abigail King', 'Andrew Wright', 'Elizabeth Scott',
-      'Christopher King', 'Madison Wright', 'Anthony Lopez', 'Victoria Hill', 'Andrew Scott',
-      'Samantha Green', 'Joshua Adams', 'Grace Nelson', 'Nicholas Baker', 'Hannah Carter',
-      'Ryan Mitchell', 'Lauren Perez', 'Tyler Roberts', 'Alyssa Turner', 'Brandon Phillips'
-    ];
-    
-    const projectNames = [
-      'Facial Treatment', 'Skin Rejuvenation', 'Laser Hair Removal', 'Botox Injection',
-      'Dermal Fillers', 'Chemical Peel', 'Microdermabrasion', 'Acne Treatment',
-      'Anti-aging Package', 'Hydrafacial', 'Body Contouring', 'Scar Reduction',
-      'Skin Tightening', 'Lip Enhancement', 'Eye Treatment', 'Neck Rejuvenation',
-      'Full Face Makeover', 'Skin Analysis', 'Customized Facial', 'Wellness Package',
-      'Laser Resurfacing', 'Cellulite Treatment', 'Stretch Mark Removal', 'Pigmentation Treatment',
-      'Rosacea Treatment', 'Sensitive Skin Care', 'Men\'s Facial', 'Teen Acne Solution',
-      'Post-Surgery Care', 'Maintenance Package', 'Signature Facial', 'Advanced Peeling',
-      'Radiofrequency Treatment', 'LED Light Therapy', 'Oxygen Infusion'
-    ];
-    
-    const consultantNames = [
-      'Consultant Zhang', 'Consultant Li', 'Consultant Wang', 'Consultant Zhao',
-      'Consultant Liu', 'Consultant Chen', 'Consultant Yang', 'Consultant Huang',
-      'Consultant Zhou', 'Consultant Wu', 'Consultant Zheng', 'Consultant Sun',
-      'Consultant Ma', 'Consultant Zhu', 'Consultant Hu', 'Consultant Lin',
-      'Consultant Guo', 'Consultant Gao', 'Consultant He', 'Consultant Tang',
-      'Consultant Luo', 'Consultant Hao', 'Consultant Peng', 'Consultant Han',
-      'Consultant Wang', 'Consultant Cao', 'Consultant Xu', 'Consultant Fu',
-      'Consultant Song', 'Consultant Deng', 'Consultant Xie', 'Consultant Han',
-      'Consultant Feng', 'Consultant Du', 'Consultant Jiang'
-    ];
-    
     const statuses = ['pending_payment', 'paid', 'completed', 'refunded'];
-    const paymentMethods = ['wechat', 'alipay', 'card', 'cash'];
-    
     const mockOrders = Array.from({ length: 35 }, (_, i) => {
-      const amount = Math.floor(Math.random() * 10000) + 500;
-      const discountAmount = Math.floor(Math.random() * 500);
-      const finalAmount = amount - discountAmount;
-      
-      // 随机创建日期（过去90天内）
-      const createdAt = new Date();
-      createdAt.setDate(createdAt.getDate() - Math.floor(Math.random() * 90));
-      
       return {
         id: i + 1,
-        customerId: (i % 20) + 1,
-        projectId: (i % 20) + 1,
-        consultantId: (i % 20) + 1,
+        customerId: Math.floor(Math.random() * 100) + 1,
+        customerName: `Customer ${Math.floor(Math.random() * 100) + 1}`,
+        projectId: Math.floor(Math.random() * 20) + 1,
+        projectName: `Treatment ${Math.floor(Math.random() * 20) + 1}`,
+        consultantId: Math.floor(Math.random() * 10) + 1,
+        consultantName: `Staff ${Math.floor(Math.random() * 10) + 1}`,
         status: statuses[Math.floor(Math.random() * statuses.length)],
-        paymentMethod: paymentMethods[Math.floor(Math.random() * paymentMethods.length)],
-        amount,
-        discountAmount,
-        finalAmount,
-        discountApproverId: Math.random() > 0.7 ? 1 : null,
-        notes: `Order notes ${i}`,
-        createdAt: createdAt.toISOString(),
-        updatedAt: createdAt.toISOString(),
-        customer: {
-          id: (i % 20) + 1,
-          name: customerNames[i % 20],
-          gender: Math.random() > 0.5 ? 'Male' : 'Female',
-          age: Math.floor(Math.random() * 50) + 20,
-          phone: `13800138${(i % 20).toString().padStart(3, '0')}`,
-          email: `customer${i % 20}@example.com`
-        },
-        project: {
-          id: (i % 20) + 1,
-          name: projectNames[i % 20],
-          description: `Description for ${projectNames[i % 20]}`,
-          category: 'skin_care',
-          basePrice: amount + 100,
-          isActive: true
-        },
-        consultant: {
-          id: (i % 20) + 1,
-          name: consultantNames[i % 20],
-          email: `consultant${i % 20}@beautyhospital.com`,
-          phone: `13800138${(i % 20).toString().padStart(3, '0')}`,
-          role: 'consultant'
-        },
-        discountApprover: Math.random() > 0.7 ? {
-          id: 1,
-          name: 'Admin User',
-          email: 'admin@beautyhospital.com',
-          phone: '13800138000',
-          role: 'admin'
-        } : null
+        paymentMethod: 'wechat',
+        amount: parseFloat((Math.random() * 1000 + 50).toFixed(2)),
+        discountAmount: 0,
+        finalAmount: parseFloat((Math.random() * 1000 + 50).toFixed(2)),
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
       };
     });
-    
     return mockOrders;
   };
 
@@ -278,13 +198,53 @@ export default function OrdersPage() {
     if (!confirm('Are you sure you want to delete this order?')) return;
     
     try {
-      // 实际项目中应该调用API
-      // await fetch(`http://localhost:3001/orders/${id}`, { method: 'DELETE' });
+      // Get token from localStorage
+      const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
       
-      // 更新本地状态
-      setOrders(orders.filter(o => o.id !== id));
+      if (!token) {
+        alert('Authentication required. Please log in again.');
+        router.push('/login');
+        return;
+      }
+      
+      const response = await fetch(`http://localhost:3001/orders/${id}`, { 
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+      
+      if (response.ok) {
+        // Refresh the orders list
+        fetchOrders(currentPage);
+      } else {
+        console.error('Failed to delete order');
+        
+        // If unauthorized, redirect to login
+        if (response.status === 401) {
+          alert('Authentication failed. Please log in again.');
+          if (typeof window !== 'undefined') {
+            localStorage.removeItem('token');
+          }
+          router.push('/login');
+          return;
+        }
+        
+        alert('Failed to delete order: ' + (await response.text()) || 'Unknown error');
+      }
     } catch (error) {
       console.error('Error deleting order:', error);
+      alert('Error deleting order');
+    }
+  };
+
+  const getStatusBadgeColor = (status: string) => {
+    switch (status) {
+      case 'paid': return 'bg-green-100 text-green-800';
+      case 'pending_payment': return 'bg-yellow-100 text-yellow-800';
+      case 'completed': return 'bg-blue-100 text-blue-800';
+      case 'refunded': return 'bg-red-100 text-red-800';
+      default: return 'bg-gray-100 text-gray-800';
     }
   };
 
@@ -294,30 +254,6 @@ export default function OrdersPage() {
       month: 'short',
       day: 'numeric'
     });
-  };
-
-  const getStatusBadgeColor = (status: string) => {
-    switch (status) {
-      case 'pending_payment': return 'bg-yellow-100 text-yellow-800';
-      case 'paid': return 'bg-blue-100 text-blue-800';
-      case 'completed': return 'bg-green-100 text-green-800';
-      case 'refunded': return 'bg-red-100 text-red-800';
-      default: return 'bg-gray-100 text-gray-800';
-    }
-  };
-
-  const formatStatus = (status: string) => {
-    return status.split('_').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
-  };
-
-  const formatPaymentMethod = (method: string) => {
-    switch (method) {
-      case 'wechat': return 'WeChat Pay';
-      case 'alipay': return 'Alipay';
-      case 'card': return 'Credit Card';
-      case 'cash': return 'Cash';
-      default: return method;
-    }
   };
 
   if (loading) {
@@ -331,10 +267,10 @@ export default function OrdersPage() {
   return (
     <div className="p-6">
       <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">Orders</h1>
+        <h1 className="text-2xl font-bold text-gray-900">{t('orders.management')}</h1>
         <Link href="/dashboard/orders/new" className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md flex items-center">
           <PlusCircle className="mr-2 h-5 w-5" />
-          Create New Order
+          {t('orders.addNew')}
         </Link>
       </div>
 
@@ -343,62 +279,54 @@ export default function OrdersPage() {
           <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-gray-50">
               <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Order ID</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Customer</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Treatment</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Staff</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Amount</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{t('orders.customer')}</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{t('orders.treatment')}</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{t('orders.consultant')}</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{t('orders.amount')}</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{t('orders.paymentStatus')}</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{t('orders.paymentMethod')}</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{t('common.actions')}</th>
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
               {orders.map((order) => (
                 <tr key={order.id}>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm font-medium text-gray-900">#{order.id}</div>
+                    <div className="text-sm font-medium text-gray-900">{order.customerName || `Customer #${order.customerId}`}</div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm font-medium text-gray-900">{order.customer.name}</div>
-                    <div className="text-xs text-gray-500">{order.customer.phone}</div>
+                    <div className="text-sm text-gray-500">{order.projectName || `Treatment #${order.projectId}`}</div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm text-gray-500">{order.project.name}</div>
-                    <div className="text-xs text-gray-500">${order.project.basePrice}</div>
+                    <div className="text-sm text-gray-500">{order.consultantName || `Staff #${order.consultantId}`}</div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm text-gray-500">{order.consultant.name}</div>
-                    <div className="text-xs text-gray-500">{order.consultant.role}</div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm font-medium text-gray-900">${order.finalAmount.toFixed(2)}</div>
-                    {order.discountAmount > 0 && (
-                      <div className="text-xs text-green-600">Saved: ${order.discountAmount.toFixed(2)}</div>
-                    )}
+                    <div className="text-sm text-gray-500">${typeof order.amount === 'number' ? order.amount.toFixed(2) : 'N/A'}</div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusBadgeColor(order.status)}`}>
-                      {formatStatus(order.status)}
+                      {t(`orders.${order.status}`) || order.status}
                     </span>
-                    <div className="text-xs text-gray-500 mt-1">{formatPaymentMethod(order.paymentMethod)}</div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm text-gray-500">{formatDate(order.createdAt)}</div>
+                    <div className="text-sm text-gray-500">{t(`orders.${order.paymentMethod}`) || order.paymentMethod}</div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                     <div className="flex space-x-2">
                       <Link href={`/dashboard/orders/${order.id}`} className="text-blue-600 hover:text-blue-900">
                         <Eye className="h-5 w-5" />
+                        <span className="sr-only">{t('common.view')}</span>
                       </Link>
                       <Link href={`/dashboard/orders/${order.id}/edit`} className="text-yellow-600 hover:text-yellow-900">
                         <Edit className="h-5 w-5" />
+                        <span className="sr-only">{t('common.edit')}</span>
                       </Link>
                       <button 
                         onClick={() => handleDelete(order.id)} 
                         className="text-red-600 hover:text-red-900"
                       >
                         <Trash2 className="h-5 w-5" />
+                        <span className="sr-only">{t('common.delete')}</span>
                       </button>
                     </div>
                   </td>

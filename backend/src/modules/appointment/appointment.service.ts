@@ -25,7 +25,7 @@ export class AppointmentService {
       skip,
       take: limit,
       relations: ['customer', 'assignedStaff'],
-      order: { id: 'ASC' }
+      order: { createdAt: 'DESC' }
     });
 
     return new PaginatedResponseDto(data, total, page, limit);

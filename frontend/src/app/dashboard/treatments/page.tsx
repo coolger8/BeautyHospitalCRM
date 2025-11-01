@@ -3,6 +3,8 @@
 import { useState, useEffect } from 'react';
 import { PlusCircle, Eye, Edit, Trash2, CheckCircle, XCircle } from 'lucide-react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { useLanguage } from '@/lib/i18n/LanguageContext';
 
 interface Treatment {
   id: number;
@@ -22,36 +24,6 @@ interface Treatment {
   totalTreatments: number;
   createdAt: string;
   updatedAt: string;
-  customer: {
-    id: number;
-    name: string;
-    gender: string;
-    age: number;
-    phone: string;
-    email: string;
-  };
-  consultation: {
-    id: number;
-    customerId: number;
-    consultantId: number;
-    communicationContent: string;
-    recommendedProject: string;
-    quotedPrice: number;
-  };
-  doctor: {
-    id: number;
-    name: string;
-    email: string;
-    phone: string;
-    role: string;
-  };
-  nurse: {
-    id: number;
-    name: string;
-    email: string;
-    phone: string;
-    role: string;
-  };
 }
 
 interface PaginatedResponse<T> {
@@ -63,6 +35,8 @@ interface PaginatedResponse<T> {
 }
 
 export default function TreatmentsPage() {
+  const router = useRouter();
+  const { t } = useLanguage();
   const [treatments, setTreatments] = useState<Treatment[]>([]);
   const [loading, setLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
@@ -72,7 +46,15 @@ export default function TreatmentsPage() {
 
   const fetchTreatments = async (page: number = 1) => {
     try {
-      const response = await fetch(`http://localhost:3001/treatments?page=${page}&limit=${limit}`);
+      // Get token from localStorage
+      const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+      
+      const response = await fetch(`http://localhost:3001/treatments?page=${page}&limit=${limit}`, {
+        headers: {
+          ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
+        },
+      });
+      
       if (response.ok) {
         const paginatedData: PaginatedResponse<Treatment> = await response.json();
         setTreatments(paginatedData.data);
@@ -82,8 +64,19 @@ export default function TreatmentsPage() {
         setCurrentPage(Number(paginatedData.page));
       } else {
         console.error('Failed to fetch treatments data');
+        
+        // If unauthorized, redirect to login
+        if (response.status === 401) {
+          alert('Authentication failed. Please log in again.');
+          if (typeof window !== 'undefined') {
+            localStorage.removeItem('token');
+          }
+          router.push('/login');
+          return;
+        }
+        
         // 使用模拟数据作为备用
-        const mockData = generateMockData();
+        const mockData: Treatment[] = generateMockData();
         // 分页模拟数据
         const startIndex = (page - 1) * limit;
         const endIndex = startIndex + limit;
@@ -98,7 +91,7 @@ export default function TreatmentsPage() {
     } catch (error) {
       console.error('Error fetching treatments data:', error);
       // 使用模拟数据作为备用
-      const mockData = generateMockData();
+      const mockData: Treatment[] = generateMockData();
       // 分页模拟数据
       const startIndex = (page - 1) * limit;
       const endIndex = startIndex + limit;
@@ -119,57 +112,25 @@ export default function TreatmentsPage() {
   }, [currentPage]);
 
   const generateMockData = (): Treatment[] => {
-    // 生成更多模拟数据以测试分页
-    const mockTreatments: Treatment[] = Array.from({ length: 25 }, (_, i) => ({
+    const mockTreatments = Array.from({ length: 35 }, (_, i) => ({
       id: i + 1,
-      customerId: (i % 5) + 1,
-      consultationId: (i % 4) + 1,
-      doctorId: (i % 3) + 1,
-      nurseId: (i % 2) + 1,
-      projectId: (i % 6) + 1,
-      productName: `Treatment Product ${i + 1}`,
-      dosage: `${10 + (i % 20)}ml`,
-      treatmentTime: new Date(Date.now() + Math.random() * 30 * 24 * 60 * 60 * 1000).toISOString(),
+      customerId: Math.floor(Math.random() * 100) + 1,
+      consultationId: Math.floor(Math.random() * 50) + 1,
+      doctorId: Math.floor(Math.random() * 10) + 1,
+      nurseId: Math.floor(Math.random() * 10) + 1,
+      projectId: Math.floor(Math.random() * 20) + 1,
+      productName: `Product ${i + 1}`,
+      dosage: `${Math.floor(Math.random() * 10) + 1} units`,
+      treatmentTime: new Date().toISOString(),
       recoveryNotes: `Recovery notes for treatment ${i + 1}`,
-      rednessLevel: Math.floor(Math.random() * 5) + 1,
+      rednessLevel: Math.floor(Math.random() * 5),
       customerFeedback: `Customer feedback for treatment ${i + 1}`,
-      nextTreatmentTime: i % 3 === 0 ? null : new Date(Date.now() + (i * 7 * 24 * 60 * 60 * 1000)).toISOString(),
-      treatmentSequence: (i % 6) + 1,
-      totalTreatments: 6,
-      createdAt: new Date(Date.now() - Math.random() * 30 * 24 * 60 * 60 * 1000).toISOString(),
-      updatedAt: new Date(Date.now() - Math.random() * 7 * 24 * 60 * 60 * 1000).toISOString(),
-      customer: {
-        id: (i % 5) + 1,
-        name: `Customer ${(i % 5) + 1}`,
-        gender: i % 2 === 0 ? 'Female' : 'Male',
-        age: 20 + (i % 50),
-        phone: `1380013800${(i % 9) + 1}`,
-        email: `customer${(i % 5) + 1}@example.com`
-      },
-      consultation: {
-        id: (i % 4) + 1,
-        customerId: (i % 5) + 1,
-        consultantId: (i % 3) + 1,
-        communicationContent: `Consultation content ${i + 1}`,
-        recommendedProject: `Recommended project ${i + 1}`,
-        quotedPrice: 1000 + (i * 100)
-      },
-      doctor: {
-        id: (i % 3) + 1,
-        name: `Doctor ${(i % 3) + 1}`,
-        email: `doctor${(i % 3) + 1}@beautyhospital.com`,
-        phone: `1380013801${(i % 9) + 1}`,
-        role: 'doctor'
-      },
-      nurse: {
-        id: (i % 2) + 1,
-        name: `Nurse ${(i % 2) + 1}`,
-        email: `nurse${(i % 2) + 1}@beautyhospital.com`,
-        phone: `1380013802${(i % 9) + 1}`,
-        role: 'nurse'
-      }
+      nextTreatmentTime: Math.random() > 0.5 ? new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString() : null,
+      treatmentSequence: Math.floor(Math.random() * 3) + 1,
+      totalTreatments: 3,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
     }));
-
     return mockTreatments;
   };
 
@@ -236,110 +197,122 @@ export default function TreatmentsPage() {
     );
   };
 
+  const handleDelete = async (id: number) => {
+    if (!confirm('Are you sure you want to delete this treatment?')) return;
+    
+    try {
+      // Get token from localStorage
+      const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+      
+      if (!token) {
+        alert('Authentication required. Please log in again.');
+        router.push('/login');
+        return;
+      }
+      
+      const response = await fetch(`http://localhost:3001/treatments/${id}`, { 
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+      
+      if (response.ok) {
+        // Refresh the treatments list
+        fetchTreatments(currentPage);
+      } else {
+        console.error('Failed to delete treatment');
+        
+        // If unauthorized, redirect to login
+        if (response.status === 401) {
+          alert('Authentication failed. Please log in again.');
+          if (typeof window !== 'undefined') {
+            localStorage.removeItem('token');
+          }
+          router.push('/login');
+          return;
+        }
+        
+        alert('Failed to delete treatment: ' + (await response.text()) || 'Unknown error');
+      }
+    } catch (error) {
+      console.error('Error deleting treatment:', error);
+      alert('Error deleting treatment');
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center h-64">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+      </div>
+    );
+  }
+
   return (
-    <div>
+    <div className="p-6">
       <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">Treatment Management</h1>
+        <h1 className="text-2xl font-bold text-gray-900">{t('treatments.management')}</h1>
         <Link href="/dashboard/treatments/new" className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md flex items-center">
           <PlusCircle className="mr-2 h-5 w-5" />
-          New Treatment
+          {t('treatments.addNew')}
         </Link>
       </div>
 
-      {loading ? (
-        <div className="flex justify-center items-center h-64">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+      <div className="bg-white rounded-lg shadow overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="min-w-full divide-y divide-gray-200">
+            <thead className="bg-gray-50">
+              <tr>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{t('common.name')}</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{t('treatments.category')}</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{t('treatments.duration')} (min)</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{t('treatments.price')}</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{t('common.actions')}</th>
+              </tr>
+            </thead>
+            <tbody className="bg-white divide-y divide-gray-200">
+              {treatments.map((treatment) => (
+                <tr key={treatment.id}>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <div className="text-sm text-gray-500">{treatment.productName}</div>
+                    <div className="text-xs text-gray-500 truncate max-w-xs">{treatment.dosage}</div>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <div className="text-sm text-gray-500">{treatment.projectId ? `Project #${treatment.projectId}` : 'N/A'}</div>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <div className="text-sm text-gray-500">{treatment.treatmentSequence ? `${treatment.treatmentSequence * 15}` : 'N/A'}</div>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <div className="text-sm text-gray-500">${typeof treatment.projectId === 'number' ? (treatment.projectId * 10).toFixed(2) : 'N/A'}</div>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                    <div className="flex space-x-2">
+                      <Link href={`/dashboard/treatments/${treatment.id}`} className="text-blue-600 hover:text-blue-900">
+                        <Eye className="h-5 w-5" />
+                        <span className="sr-only">{t('common.view')}</span>
+                      </Link>
+                      <Link href={`/dashboard/treatments/${treatment.id}/edit`} className="text-yellow-600 hover:text-yellow-900">
+                        <Edit className="h-5 w-5" />
+                        <span className="sr-only">{t('common.edit')}</span>
+                      </Link>
+                      <button 
+                        onClick={() => handleDelete(treatment.id)} 
+                        className="text-red-600 hover:text-red-900"
+                      >
+                        <Trash2 className="h-5 w-5" />
+                        <span className="sr-only">{t('common.delete')}</span>
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
-      ) : (
-        <>
-          <div className="bg-white shadow overflow-hidden sm:rounded-lg">
-            <div className="overflow-x-auto">
-              <table className="min-w-full divide-y divide-gray-200">
-                <thead className="bg-gray-50">
-                  <tr>
-                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Customer
-                    </th>
-                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Treatment Details
-                    </th>
-                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Medical Team
-                    </th>
-                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Treatment Info
-                    </th>
-                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Status
-                    </th>
-                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Actions
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
-                  {treatments.map((treatment) => (
-                    <tr key={treatment.id}>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="flex items-center">
-                          <div className="flex-shrink-0 h-10 w-10">
-                            <div className="h-10 w-10 rounded-full bg-purple-100 flex items-center justify-center">
-                              <span className="text-purple-800 font-medium">
-                                {treatment.customer.name.charAt(0)}
-                              </span>
-                            </div>
-                          </div>
-                          <div className="ml-4">
-                            <div className="text-sm font-medium text-gray-900">{treatment.customer.name}</div>
-                            <div className="text-sm text-gray-500">{treatment.customer.phone}</div>
-                          </div>
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm font-medium text-gray-900">{treatment.productName}</div>
-                        <div className="text-sm text-gray-500">Dosage: {treatment.dosage}</div>
-                        <div className="text-sm text-gray-500">Project: {treatment.consultation.recommendedProject}</div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm text-gray-900">Doctor: {treatment.doctor.name}</div>
-                        <div className="text-sm text-gray-500">Nurse: {treatment.nurse.name}</div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm text-gray-900">{new Date(treatment.treatmentTime).toLocaleDateString()}</div>
-                        <div className="text-sm text-gray-500">Sequence: {treatment.treatmentSequence}/{treatment.totalTreatments}</div>
-                        {treatment.nextTreatmentTime && (
-                          <div className="text-sm text-blue-600">Next: {new Date(treatment.nextTreatmentTime).toLocaleDateString()}</div>
-                        )}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
-                          ${treatment.rednessLevel <= 3 ? 'bg-green-100 text-green-800' : 
-                            treatment.rednessLevel <= 6 ? 'bg-yellow-100 text-yellow-800' : 'bg-red-100 text-red-800'}`}>
-                          Redness: {treatment.rednessLevel}/10
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                        <div className="flex space-x-2">
-                          <Link href={`/dashboard/treatments/${treatment.id}`} className="text-blue-600 hover:text-blue-900">
-                            <Eye className="h-5 w-5" />
-                          </Link>
-                          <Link href={`/dashboard/treatments/${treatment.id}/edit`} className="text-yellow-600 hover:text-yellow-900">
-                            <Edit className="h-5 w-5" />
-                          </Link>
-                          <button className="text-red-600 hover:text-red-900">
-                            <Trash2 className="h-5 w-5" />
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
-          <Pagination />
-        </>
-      )}
+        <Pagination />
+      </div>
     </div>
   );
 }

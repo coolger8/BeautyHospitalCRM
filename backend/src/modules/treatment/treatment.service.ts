@@ -28,7 +28,7 @@ export class TreatmentService {
       skip,
       take: limit,
       relations: ['customer', 'consultation', 'doctor', 'nurse'],
-      order: { id: 'ASC' }
+      order: { createdAt: 'DESC' }
     });
 
     return new PaginatedResponseDto(data, total, page, limit);

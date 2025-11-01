@@ -3,32 +3,22 @@
 import { useState, useEffect } from 'react';
 import { PlusCircle, Eye, Edit, Trash2, CheckCircle, XCircle } from 'lucide-react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { useLanguage } from '@/lib/i18n/LanguageContext';
 
 interface Appointment {
   id: number;
   customerId: number;
+  customerName?: string;
   assignedStaffId: number;
+  staffName?: string;
   projectId: number;
+  treatmentName?: string;
   scheduledTime: string;
   status: string;
   notes: string;
   createdAt: string;
   updatedAt: string;
-  customer: {
-    id: number;
-    name: string;
-    gender: string;
-    age: number;
-    phone: string;
-    email: string;
-  };
-  assignedStaff: {
-    id: number;
-    name: string;
-    email: string;
-    phone: string;
-    role: string;
-  };
 }
 
 interface PaginatedResponse<T> {
@@ -40,6 +30,8 @@ interface PaginatedResponse<T> {
 }
 
 export default function AppointmentsPage() {
+  const router = useRouter();
+  const { t } = useLanguage();
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [loading, setLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
@@ -49,7 +41,15 @@ export default function AppointmentsPage() {
 
   const fetchAppointments = async (page: number = 1) => {
     try {
-      const response = await fetch(`http://localhost:3001/appointments?page=${page}&limit=${limit}`);
+      // Get token from localStorage
+      const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+      
+      const response = await fetch(`http://localhost:3001/appointments?page=${page}&limit=${limit}`, {
+        headers: {
+          ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
+        },
+      });
+      
       if (response.ok) {
         const paginatedData: PaginatedResponse<Appointment> = await response.json();
         setAppointments(paginatedData.data);
@@ -59,8 +59,19 @@ export default function AppointmentsPage() {
         setCurrentPage(Number(paginatedData.page));
       } else {
         console.error('Failed to fetch appointments data');
+        
+        // If unauthorized, redirect to login
+        if (response.status === 401) {
+          alert('Authentication failed. Please log in again.');
+          if (typeof window !== 'undefined') {
+            localStorage.removeItem('token');
+          }
+          router.push('/login');
+          return;
+        }
+        
         // 使用模拟数据作为备用
-        const mockData = generateMockData();
+        const mockData: Appointment[] = generateMockData();
         // 分页模拟数据
         const startIndex = (page - 1) * limit;
         const endIndex = startIndex + limit;
@@ -75,7 +86,7 @@ export default function AppointmentsPage() {
     } catch (error) {
       console.error('Error fetching appointments data:', error);
       // 使用模拟数据作为备用
-      const mockData = generateMockData();
+      const mockData: Appointment[] = generateMockData();
       // 分页模拟数据
       const startIndex = (page - 1) * limit;
       const endIndex = startIndex + limit;
@@ -96,34 +107,27 @@ export default function AppointmentsPage() {
   }, [currentPage]);
 
   const generateMockData = (): Appointment[] => {
-    // 生成更多模拟数据以测试分页
-    const mockAppointments: Appointment[] = Array.from({ length: 25 }, (_, i) => ({
-      id: i + 1,
-      customerId: (i % 5) + 1,
-      assignedStaffId: (i % 3) + 1,
-      projectId: (i % 4) + 1,
-      scheduledTime: new Date(Date.now() + Math.random() * 30 * 24 * 60 * 60 * 1000).toISOString(),
-      status: ['scheduled', 'pending', 'completed', 'cancelled'][i % 4],
-      notes: `Appointment notes for appointment ${i + 1}`,
-      createdAt: new Date(Date.now() - Math.random() * 30 * 24 * 60 * 60 * 1000).toISOString(),
-      updatedAt: new Date(Date.now() - Math.random() * 7 * 24 * 60 * 60 * 1000).toISOString(),
-      customer: {
-        id: (i % 5) + 1,
-        name: `Customer ${(i % 5) + 1}`,
-        gender: i % 2 === 0 ? 'Female' : 'Male',
-        age: 20 + (i % 50),
-        phone: `1380013800${(i % 9) + 1}`,
-        email: `customer${(i % 5) + 1}@example.com`
-      },
-      assignedStaff: {
-        id: (i % 3) + 1,
-        name: `Staff ${(i % 3) + 1}`,
-        email: `staff${(i % 3) + 1}@beautyhospital.com`,
-        phone: `1380013801${(i % 9) + 1}`,
-        role: ['doctor', 'nurse', 'consultant'][i % 3]
-      }
-    }));
-
+    const statuses = ['pending', 'confirmed', 'completed', 'cancelled'];
+    const mockAppointments = Array.from({ length: 35 }, (_, i) => {
+      const date = new Date();
+      date.setDate(date.getDate() + Math.floor(Math.random() * 30) - 15);
+      date.setHours(Math.floor(Math.random() * 12) + 9, Math.floor(Math.random() * 4) * 15, 0, 0);
+      
+      return {
+        id: i + 1,
+        customerId: Math.floor(Math.random() * 100) + 1,
+        customerName: `Customer ${Math.floor(Math.random() * 100) + 1}`,
+        assignedStaffId: Math.floor(Math.random() * 10) + 1,
+        staffName: `Staff ${Math.floor(Math.random() * 10) + 1}`,
+        projectId: Math.floor(Math.random() * 20) + 1,
+        treatmentName: `Treatment ${Math.floor(Math.random() * 20) + 1}`,
+        scheduledTime: date.toISOString(),
+        status: statuses[Math.floor(Math.random() * statuses.length)],
+        notes: `Appointment notes ${i + 1}`,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      };
+    });
     return mockAppointments;
   };
 
@@ -190,131 +194,217 @@ export default function AppointmentsPage() {
     );
   };
 
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    return new Intl.DateTimeFormat('en-US', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
-    }).format(date);
+  const handleStatusToggle = async (id: number) => {
+    try {
+      const appointmentToUpdate = appointments.find(a => a.id === id);
+      if (!appointmentToUpdate) return;
+
+      // Get token from localStorage
+      const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+      
+      if (!token) {
+        alert('Authentication required. Please log in again.');
+        router.push('/login');
+        return;
+      }
+
+      const newStatus = appointmentToUpdate.status === 'pending' ? 'confirmed' : 
+                        appointmentToUpdate.status === 'confirmed' ? 'completed' : 'pending';
+      
+      const response = await fetch(`http://localhost:3001/appointments/${id}`, {
+        method: 'PUT',
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify({ status: newStatus }),
+      });
+
+      if (response.ok) {
+        const updatedAppointment = await response.json();
+        // Update local state
+        setAppointments(appointments.map(a => 
+          a.id === id ? updatedAppointment : a
+        ));
+      } else {
+        console.error('Failed to update appointment status');
+        
+        // If unauthorized, redirect to login
+        if (response.status === 401) {
+          alert('Authentication failed. Please log in again.');
+          if (typeof window !== 'undefined') {
+            localStorage.removeItem('token');
+          }
+          router.push('/login');
+          return;
+        }
+        
+        alert('Failed to update appointment status: ' + (await response.text()) || 'Unknown error');
+      }
+    } catch (error) {
+      console.error('Error updating appointment status:', error);
+      alert('Error updating appointment status');
+    }
+  };
+
+  const handleDelete = async (id: number) => {
+    if (!confirm('Are you sure you want to delete this appointment?')) return;
+    
+    try {
+      // Get token from localStorage
+      const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+      
+      if (!token) {
+        alert('Authentication required. Please log in again.');
+        router.push('/login');
+        return;
+      }
+      
+      const response = await fetch(`http://localhost:3001/appointments/${id}`, { 
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+      
+      if (response.ok) {
+        // Refresh the appointments list
+        fetchAppointments(currentPage);
+      } else {
+        console.error('Failed to delete appointment');
+        
+        // If unauthorized, redirect to login
+        if (response.status === 401) {
+          alert('Authentication failed. Please log in again.');
+          if (typeof window !== 'undefined') {
+            localStorage.removeItem('token');
+          }
+          router.push('/login');
+          return;
+        }
+        
+        alert('Failed to delete appointment: ' + (await response.text()) || 'Unknown error');
+      }
+    } catch (error) {
+      console.error('Error deleting appointment:', error);
+      alert('Error deleting appointment');
+    }
   };
 
   const getStatusBadgeColor = (status: string) => {
     switch (status) {
-      case 'Confirmed':
-        return 'bg-green-100 text-green-800';
-      case 'Pending':
-        return 'bg-yellow-100 text-yellow-800';
-      case 'Cancelled':
-        return 'bg-red-100 text-red-800';
-      case 'Completed':
-        return 'bg-blue-100 text-blue-800';
-      default:
-        return 'bg-gray-100 text-gray-800';
+      case 'pending': return 'bg-yellow-100 text-yellow-800';
+      case 'confirmed': return 'bg-blue-100 text-blue-800';
+      case 'completed': return 'bg-green-100 text-green-800';
+      case 'cancelled': return 'bg-red-100 text-red-800';
+      default: return 'bg-gray-100 text-gray-800';
     }
   };
 
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric'
+    });
+  };
+
+  const formatTime = (dateString: string) => {
+    return new Date(dateString).toLocaleTimeString('en-US', {
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: true
+    });
+  };
+
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center h-64">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+      </div>
+    );
+  }
+
   return (
-    <div>
+    <div className="p-6">
       <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">Appointment Management</h1>
+        <h1 className="text-2xl font-bold text-gray-900">{t('appointments.management')}</h1>
         <Link href="/dashboard/appointments/new" className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md flex items-center">
           <PlusCircle className="mr-2 h-5 w-5" />
-          New Appointment
+          {t('appointments.addNew')}
         </Link>
       </div>
 
-      {loading ? (
-        <div className="flex justify-center items-center h-64">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
-        </div>
-      ) : (
-        <div className="bg-white shadow overflow-hidden sm:rounded-lg">
-          <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Customer
-                  </th>
-                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Doctor
-                  </th>
-                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Date & Time
-                  </th>
-                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Type
-                  </th>
-                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Status
-                  </th>
-                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Actions
-                  </th>
+      <div className="bg-white rounded-lg shadow overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="min-w-full divide-y divide-gray-200">
+            <thead className="bg-gray-50">
+              <tr>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{t('appointments.customer')}</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{t('appointments.treatment')}</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{t('appointments.consultant')}</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{t('appointments.date')}</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{t('appointments.time')}</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{t('common.status')}</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{t('common.actions')}</th>
+              </tr>
+            </thead>
+            <tbody className="bg-white divide-y divide-gray-200">
+              {appointments.map((appointment) => (
+                <tr key={appointment.id}>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <div className="text-sm font-medium text-gray-900">{appointment.customerName || `Customer #${appointment.customerId}`}</div>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <div className="text-sm text-gray-500">{appointment.treatmentName || `Treatment #${appointment.projectId}`}</div>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <div className="text-sm text-gray-500">{appointment.staffName || `Staff #${appointment.assignedStaffId}`}</div>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <div className="text-sm text-gray-500">{formatDate(appointment.scheduledTime)}</div>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <div className="text-sm text-gray-500">{formatTime(appointment.scheduledTime)}</div>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusBadgeColor(appointment.status)}`}>
+                      {t(`appointments.${appointment.status}`) || appointment.status}
+                    </span>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                    <div className="flex space-x-2">
+                      <Link href={`/dashboard/appointments/${appointment.id}`} className="text-blue-600 hover:text-blue-900">
+                        <Eye className="h-5 w-5" />
+                        <span className="sr-only">{t('common.view')}</span>
+                      </Link>
+                      <Link href={`/dashboard/appointments/${appointment.id}/edit`} className="text-yellow-600 hover:text-yellow-900">
+                        <Edit className="h-5 w-5" />
+                        <span className="sr-only">{t('common.edit')}</span>
+                      </Link>
+                      <button 
+                        onClick={() => handleStatusToggle(appointment.id)} 
+                        className="text-green-600 hover:text-green-900"
+                      >
+                        <CheckCircle className="h-5 w-5" />
+                        <span className="sr-only">{t('common.update')}</span>
+                      </button>
+                      <button 
+                        onClick={() => handleDelete(appointment.id)} 
+                        className="text-red-600 hover:text-red-900"
+                      >
+                        <Trash2 className="h-5 w-5" />
+                        <span className="sr-only">{t('common.delete')}</span>
+                      </button>
+                    </div>
+                  </td>
                 </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
-                {appointments.map((appointment) => (
-                  <tr key={appointment.id}>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="flex items-center">
-                        <div className="flex-shrink-0 h-10 w-10">
-                          <div className="h-10 w-10 rounded-full bg-blue-100 flex items-center justify-center">
-                            <span className="text-blue-800 font-medium">
-                              {appointment.customer?.name?.charAt(0) || 'C'}
-                            </span>
-                          </div>
-                        </div>
-                        <div className="ml-4">
-                          <div className="text-sm font-medium text-gray-900">
-                            <Link href={`/dashboard/customers/${appointment.customerId}`} className="hover:underline">
-                              {appointment.customer?.name || 'Unknown Customer'}
-                            </Link>
-                          </div>
-                          <div className="text-sm text-gray-500">{appointment.customer?.phone}</div>
-                        </div>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-900">{appointment.assignedStaff?.name || 'Unknown Staff'}</div>
-                      <div className="text-sm text-gray-500">{appointment.assignedStaff?.role}</div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-900">{formatDate(appointment.scheduledTime)}</div>
-                      <div className="text-sm text-gray-500">Project #{appointment.projectId}</div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      Appointment
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusBadgeColor(appointment.status)}`}>
-                        {appointment.status.charAt(0).toUpperCase() + appointment.status.slice(1)}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                      <div className="flex space-x-2">
-                        <Link href={`/dashboard/appointments/${appointment.id}`} className="text-blue-600 hover:text-blue-900">
-                          <Eye className="h-5 w-5" />
-                        </Link>
-                        <Link href={`/dashboard/appointments/${appointment.id}/edit`} className="text-yellow-600 hover:text-yellow-900">
-                          <Edit className="h-5 w-5" />
-                        </Link>
-                        <button className="text-red-600 hover:text-red-900">
-                          <Trash2 className="h-5 w-5" />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-          <Pagination />
+              ))}
+            </tbody>
+          </table>
         </div>
-      )}
+        <Pagination />
+      </div>
     </div>
   );
 }

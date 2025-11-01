@@ -53,6 +53,9 @@ export class Customer {
   })
   demandType: DemandType;
 
+  @Column({ default: true })
+  isActive: boolean;
+
   @Column({ nullable: true })
   allergyHistory: string;
 

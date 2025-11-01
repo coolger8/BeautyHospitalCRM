@@ -2,10 +2,11 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import Image from 'next/image';
+import { useLanguage } from '@/lib/i18n/LanguageContext';
 
 export default function LoginPage() {
   const router = useRouter();
+  const { t } = useLanguage();
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
@@ -17,18 +18,33 @@ export default function LoginPage() {
     setError('');
 
     try {
-      // 在实际应用中，这里应该调用后端API进行身份验证
-      // 这里简单模拟登录过程
-      if (username === 'admin' && password === 'admin') {
-        // Store a token in localStorage to indicate user is logged in
-        localStorage.setItem('token', 'admin-token');
-        // 登录成功，跳转到仪表盘
+      // Call the backend authentication API
+      const response = await fetch('http://localhost:3001/auth/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          email: username,
+          password: password,
+        }),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        // Store the real JWT token in localStorage
+        localStorage.setItem('token', data.access_token);
+        // Store staff info if needed
+        localStorage.setItem('staff', JSON.stringify(data.staff));
+        // Redirect to dashboard
         router.push('/dashboard');
       } else {
-        setError('用户名或密码错误');
+        const errorData = await response.json();
+        setError(errorData.message || t('login.defaultCredentials'));
       }
     } catch (err) {
-      setError('登录失败，请稍后再试');
+      console.error('Login error:', err);
+      setError(t('login.defaultCredentials'));
     } finally {
       setLoading(false);
     }
@@ -39,31 +55,34 @@ export default function LoginPage() {
       <div className="max-w-md w-full space-y-8">
         <div>
           <div className="flex justify-center">
-            <h1 className="text-3xl font-bold text-blue-600">美容医院CRM系统</h1>
+            <h1 className="text-3xl font-bold text-blue-600">{t('dashboard.title')}</h1>
           </div>
-          <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">登录您的账户</h2>
+          <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">{t('login.title')}</h2>
+          <p className="mt-2 text-center text-sm text-gray-600">
+            {t('login.defaultCredentials')}
+          </p>
         </div>
         <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
           <input type="hidden" name="remember" defaultValue="true" />
           <div className="rounded-md shadow-sm -space-y-px">
             <div>
               <label htmlFor="username" className="sr-only">
-                用户名
+                {t('login.email')}
               </label>
               <input
                 id="username"
                 name="username"
-                type="text"
+                type="email"
                 required
                 className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-t-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm"
-                placeholder="用户名"
+                placeholder={t('login.email') + " (admin@beautyhospital.com)"}
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
               />
             </div>
             <div>
               <label htmlFor="password" className="sr-only">
-                密码
+                {t('login.password')}
               </label>
               <input
                 id="password"
@@ -71,7 +90,7 @@ export default function LoginPage() {
                 type="password"
                 required
                 className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-b-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm"
-                placeholder="密码"
+                placeholder={t('login.password') + " (admin123)"}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
               />
@@ -87,13 +106,13 @@ export default function LoginPage() {
                 className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
               />
               <label htmlFor="remember-me" className="ml-2 block text-sm text-gray-900">
-                记住我
+                {t('login.rememberMe')}
               </label>
             </div>
 
             <div className="text-sm">
               <a href="#" className="font-medium text-blue-600 hover:text-blue-500">
-                忘记密码?
+                {t('login.forgotPassword')}
               </a>
             </div>
           </div>
@@ -122,7 +141,7 @@ export default function LoginPage() {
                   </svg>
                 </span>
               )}
-              登录
+              {t('login.button')}
             </button>
           </div>
         </form>

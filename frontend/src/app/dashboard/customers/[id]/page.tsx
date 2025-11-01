@@ -20,6 +20,8 @@ interface Customer {
   contraindications: string;
   visitFrequency: number;
   satisfactionScore: number;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export default function CustomerDetailPage({ params }: { params: Promise<{ id: string }> }) {
@@ -30,30 +32,46 @@ export default function CustomerDetailPage({ params }: { params: Promise<{ id: s
   const customerId = parseInt(resolvedParams.id);
 
   useEffect(() => {
-    // In a real app, this would fetch data from the backend
-    const mockCustomer: Customer = {
-      id: customerId,
-      name: 'Alice Johnson',
-      gender: 'Female',
-      age: 32,
-      phone: '13800138001',
-      email: 'alice@example.com',
-      address: '123 Main St, Beijing',
-      source: 'Advertisement',
-      valueLevel: 'Gold',
-      consumptionLevel: 'High',
-      demandType: 'Skin Management',
-      allergyHistory: 'Penicillin allergy',
-      contraindications: 'None',
-      visitFrequency: 5,
-      satisfactionScore: 9,
+    const fetchCustomer = async () => {
+      try {
+        const response = await fetch(`http://localhost:3001/customers/${customerId}`);
+        if (response.ok) {
+          const customerData: Customer = await response.json();
+          setCustomer(customerData);
+        } else {
+          console.error('Failed to fetch customer data');
+        }
+      } catch (error) {
+        console.error('Error fetching customer:', error);
+      } finally {
+        setLoading(false);
+      }
     };
 
-    setTimeout(() => {
-      setCustomer(mockCustomer);
-      setLoading(false);
-    }, 500);
+    if (customerId) {
+      fetchCustomer();
+    }
   }, [customerId]);
+
+  const handleDelete = async () => {
+    if (confirm('Are you sure you want to delete this customer?')) {
+      try {
+        const response = await fetch(`http://localhost:3001/customers/${customerId}`, {
+          method: 'DELETE',
+        });
+        
+        if (response.ok) {
+          router.push('/dashboard/customers');
+        } else {
+          console.error('Failed to delete customer');
+          alert('Failed to delete customer');
+        }
+      } catch (error) {
+        console.error('Error deleting customer:', error);
+        alert('Error deleting customer');
+      }
+    }
+  };
 
   if (loading) {
     return (
@@ -90,17 +108,12 @@ export default function CustomerDetailPage({ params }: { params: Promise<{ id: s
           <div className="flex justify-between items-center">
             <h1 className="text-2xl font-bold text-gray-900">{customer.name}</h1>
             <div className="flex space-x-2">
-              <button className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md">
+              <Link href={`/dashboard/customers/${customer.id}/edit`} className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md">
                 Edit
-              </button>
+              </Link>
               <button 
                 className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-md"
-                onClick={() => {
-                  if (confirm('Are you sure you want to delete this customer?')) {
-                    // In a real app, this would call the backend API
-                    router.push('/dashboard/customers');
-                  }
-                }}
+                onClick={handleDelete}
               >
                 Delete
               </button>
@@ -151,10 +164,12 @@ export default function CustomerDetailPage({ params }: { params: Promise<{ id: s
                   <div className="w-1/3 text-sm font-medium text-gray-500">Value Level</div>
                   <div className="w-2/3 text-sm">
                     <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
-                      ${customer.valueLevel === 'Gold' ? 'bg-yellow-100 text-yellow-800' : 
-                        customer.valueLevel === 'Silver' ? 'bg-gray-100 text-gray-800' : 
+                      ${customer.valueLevel === 'gold' ? 'bg-yellow-100 text-yellow-800' : 
+                        customer.valueLevel === 'silver' ? 'bg-gray-100 text-gray-800' : 
+                        customer.valueLevel === 'platinum' ? 'bg-purple-100 text-purple-800' :
+                        customer.valueLevel === 'diamond' ? 'bg-blue-100 text-blue-800' :
                         'bg-orange-100 text-orange-800'}`}>
-                      {customer.valueLevel}
+                      {customer.valueLevel.charAt(0).toUpperCase() + customer.valueLevel.slice(1)}
                     </span>
                   </div>
                 </div>
@@ -196,7 +211,7 @@ export default function CustomerDetailPage({ params }: { params: Promise<{ id: s
 
       <div className="mt-6 bg-white rounded-lg shadow overflow-hidden">
         <div className="px-6 py-4 border-b border-gray-200">
-          <h2 className="text-lg font-medium text-gray-900">Recent Activity</h2>
+          <h2 className="text-lg font-medium text-gray-900 mb-4">Recent Activity</h2>
         </div>
         <div className="p-6">
           <div className="flow-root">

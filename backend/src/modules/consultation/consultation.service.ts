@@ -25,7 +25,7 @@ export class ConsultationService {
       skip,
       take: limit,
       relations: ['customer', 'consultant'],
-      order: { id: 'ASC' }
+      order: { createdAt: 'DESC' }
     });
 
     return new PaginatedResponseDto(data, total, page, limit);

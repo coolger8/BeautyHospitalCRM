@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
+import { useLanguage } from '@/lib/i18n/LanguageContext';
 
 export default function DashboardLayout({
   children,
@@ -11,6 +12,7 @@ export default function DashboardLayout({
 }) {
   const pathname = usePathname();
   const router = useRouter();
+  const { language, setLanguage, t } = useLanguage();
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
 
   useEffect(() => {
@@ -26,15 +28,15 @@ export default function DashboardLayout({
   }, [router]);
 
   const navigation = [
-    { name: 'Dashboard', href: '/dashboard' },
-    { name: 'Customers', href: '/dashboard/customers' },
-    { name: 'Consultations', href: '/dashboard/consultations' },
-    { name: 'Appointments', href: '/dashboard/appointments' },
-    { name: 'Treatments', href: '/dashboard/treatments' },
-    { name: 'Memberships', href: '/dashboard/memberships' },
-    { name: 'Campaigns', href: '/dashboard/campaigns' },
-    { name: 'Orders', href: '/dashboard/orders' },
-    { name: 'Staff', href: '/dashboard/staff' },
+    { name: t('dashboard.dashboard'), href: '/dashboard' },
+    { name: t('dashboard.customers'), href: '/dashboard/customers' },
+    { name: t('dashboard.consultations'), href: '/dashboard/consultations' },
+    { name: t('dashboard.appointments'), href: '/dashboard/appointments' },
+    { name: t('dashboard.treatments'), href: '/dashboard/treatments' },
+    { name: t('dashboard.memberships'), href: '/dashboard/memberships' },
+    { name: t('dashboard.campaigns'), href: '/dashboard/campaigns' },
+    { name: t('dashboard.orders'), href: '/dashboard/orders' },
+    { name: t('dashboard.staff'), href: '/dashboard/staff' },
   ];
 
   const handleLogout = async () => {
@@ -67,6 +69,10 @@ export default function DashboardLayout({
     }
   };
 
+  const toggleLanguage = () => {
+    setLanguage(language === 'en' ? 'zh' : 'en');
+  };
+
   // Don't render the layout until we've checked authentication
   if (isAuthenticated === null) {
     return null; // Or a loading spinner
@@ -81,7 +87,7 @@ export default function DashboardLayout({
       {/* Sidebar */}
       <div className="w-64 bg-white shadow-md">
         <div className="p-4 border-b">
-          <h1 className="text-xl font-bold text-gray-800">Beauty Hospital CRM</h1>
+          <h1 className="text-xl font-bold text-gray-800">{t('dashboard.title')}</h1>
         </div>
         <nav className="mt-5">
           <div className="px-2 space-y-1">
@@ -106,8 +112,14 @@ export default function DashboardLayout({
       <div className="flex-1 overflow-auto">
         <header className="bg-white shadow">
           <div className="flex justify-between items-center px-4 py-4">
-            <h2 className="text-lg font-semibold text-gray-800">Dashboard</h2>
+            <h2 className="text-lg font-semibold text-gray-800">{t('dashboard.dashboard')}</h2>
             <div className="flex items-center space-x-4">
+              <button 
+                onClick={toggleLanguage}
+                className="text-gray-500 hover:text-gray-700 px-3 py-1 rounded-md bg-gray-100"
+              >
+                {language === 'en' ? '中文' : 'English'}
+              </button>
               <button className="text-gray-500 hover:text-gray-700">
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
@@ -115,7 +127,7 @@ export default function DashboardLayout({
               </button>
               <div className="flex items-center">
                 <div className="ml-3">
-                  <p className="text-sm font-medium text-gray-700">Admin User</p>
+                  <p className="text-sm font-medium text-gray-700">{t('dashboard.adminUser')}</p>
                 </div>
               </div>
               <button 
@@ -125,7 +137,7 @@ export default function DashboardLayout({
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
                 </svg>
-                Logout
+                {t('dashboard.logout')}
               </button>
             </div>
           </div>

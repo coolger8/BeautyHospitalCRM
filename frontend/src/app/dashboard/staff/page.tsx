@@ -3,6 +3,8 @@
 import { useState, useEffect } from 'react';
 import { PlusCircle, Eye, Edit, Trash2, CheckCircle, XCircle } from 'lucide-react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { useLanguage } from '@/lib/i18n/LanguageContext';
 
 interface Staff {
   id: number;
@@ -23,6 +25,8 @@ interface PaginatedResponse<T> {
 }
 
 export default function StaffPage() {
+  const router = useRouter();
+  const { t } = useLanguage();
   const [staff, setStaff] = useState<Staff[]>([]);
   const [loading, setLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
@@ -32,7 +36,18 @@ export default function StaffPage() {
 
   const fetchStaff = async (page: number = 1) => {
     try {
-      const response = await fetch(`http://localhost:3001/staff?page=${page}&limit=${limit}`);
+      // Get token from localStorage
+      const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+      
+      const response = await fetch(`http://localhost:3001/staff?page=${page}&limit=${limit}`, {
+        headers: {
+          ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
+        },
+      });
+      
+      console.log('Staff list fetch response status:', response.status);
+      console.log('Staff list fetch response headers:', response.headers);
+      
       if (response.ok) {
         const paginatedData: PaginatedResponse<Staff> = await response.json();
         setStaff(paginatedData.data);
@@ -41,7 +56,19 @@ export default function StaffPage() {
         setTotalItems(paginatedData.total);
         setCurrentPage(Number(paginatedData.page));
       } else {
-        console.error('Failed to fetch staff data');
+        const errorText = await response.text();
+        console.error('Failed to fetch staff data. Status:', response.status, 'Response:', errorText);
+        
+        // If unauthorized, redirect to login
+        if (response.status === 401) {
+          alert('Authentication failed. Please log in again.');
+          if (typeof window !== 'undefined') {
+            localStorage.removeItem('token');
+          }
+          router.push('/login');
+          return;
+        }
+        
         // 使用模拟数据作为备用
         const mockData: Staff[] = generateMockData();
         // 分页模拟数据
@@ -160,19 +187,50 @@ export default function StaffPage() {
       const staffToUpdate = staff.find(s => s.id === id);
       if (!staffToUpdate) return;
 
-      // 实际项目中应该调用API
-      // await fetch(`http://localhost:3001/staff/${id}`, {
-      //   method: 'PATCH',
-      //   headers: { 'Content-Type': 'application/json' },
-      //   body: JSON.stringify({ isActive: !staffToUpdate.isActive }),
-      // });
+      // Get token from localStorage
+      const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+      
+      if (!token) {
+        alert('Authentication required. Please log in again.');
+        router.push('/login');
+        return;
+      }
+      
+      // Use PATCH method for updating staff status
+      const response = await fetch(`http://localhost:3001/staff/${id}`, {
+        method: 'PATCH', // Changed from PUT to PATCH
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify({ isActive: !staffToUpdate.isActive }),
+      });
 
-      // 更新本地状态
-      setStaff(staff.map(s => 
-        s.id === id ? { ...s, isActive: !s.isActive } : s
-      ));
+      if (response.ok) {
+        const updatedStaff = await response.json();
+        // Update local state
+        setStaff(staff.map(s => 
+          s.id === id ? updatedStaff : s
+        ));
+      } else {
+        const errorText = await response.text();
+        console.error('Failed to update staff status. Status:', response.status, 'Response:', errorText);
+        
+        // If unauthorized, redirect to login
+        if (response.status === 401) {
+          alert('Authentication failed. Please log in again.');
+          if (typeof window !== 'undefined') {
+            localStorage.removeItem('token');
+          }
+          router.push('/login');
+          return;
+        }
+        
+        alert('Failed to update staff status: ' + errorText || 'Unknown error');
+      }
     } catch (error) {
       console.error('Error updating staff status:', error);
+      alert('Error updating staff status');
     }
   };
 
@@ -180,13 +238,55 @@ export default function StaffPage() {
     if (!confirm('Are you sure you want to delete this staff member?')) return;
     
     try {
-      // 实际项目中应该调用API
-      // await fetch(`http://localhost:3001/staff/${id}`, { method: 'DELETE' });
+      // Get token from localStorage
+      const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
       
-      // 更新本地状态
-      setStaff(staff.filter(s => s.id !== id));
+      if (!token) {
+        alert('Authentication required. Please log in again.');
+        router.push('/login');
+        return;
+      }
+      
+      // Use DELETE method for deleting staff
+      const response = await fetch(`http://localhost:3001/staff/${id}`, { 
+        method: 'DELETE', // This is correct as per the backend controller
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+      
+      if (response.ok) {
+        // Refresh the staff list
+        fetchStaff(currentPage);
+      } else {
+        const errorText = await response.text();
+        console.error('Failed to delete staff. Status:', response.status, 'Response:', errorText);
+        
+        // If unauthorized, redirect to login
+        if (response.status === 401) {
+          alert('Authentication failed. Please log in again.');
+          if (typeof window !== 'undefined') {
+            localStorage.removeItem('token');
+          }
+          router.push('/login');
+          return;
+        }
+        
+        alert('Failed to delete staff: ' + errorText || 'Unknown error');
+      }
     } catch (error) {
       console.error('Error deleting staff:', error);
+      alert('Error deleting staff');
+    }
+  };
+
+  const formatRole = (role: string) => {
+    switch (role) {
+      case 'consultant': return 'Consultant';
+      case 'doctor': return 'Doctor';
+      case 'nurse': return 'Nurse';
+      case 'admin': return 'Admin';
+      default: return role;
     }
   };
 
@@ -201,10 +301,10 @@ export default function StaffPage() {
   return (
     <div className="p-6">
       <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">Staff Management</h1>
+        <h1 className="text-2xl font-bold text-gray-900">{t('staff.management')}</h1>
         <Link href="/dashboard/staff/new" className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md flex items-center">
           <PlusCircle className="mr-2 h-5 w-5" />
-          Add New Staff
+          {t('staff.addNew')}
         </Link>
       </div>
 
@@ -213,11 +313,11 @@ export default function StaffPage() {
           <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-gray-50">
               <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Phone</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Role</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{t('staff.fullName')}</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{t('staff.email')}</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{t('staff.phone')}</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{t('staff.role')}</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{t('staff.status')}</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
               </tr>
             </thead>
@@ -235,14 +335,14 @@ export default function StaffPage() {
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800">
-                      {staffMember.role}
+                      {formatRole(staffMember.role)}
                     </span>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
                       staffMember.isActive ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
                     }`}>
-                      {staffMember.isActive ? 'Active' : 'Inactive'}
+                      {staffMember.isActive ? t('staff.active') : t('staff.inactive')}
                     </span>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">

@@ -28,7 +28,7 @@ export class OrderService {
       skip,
       take: limit,
       relations: ['customer', 'project', 'consultant', 'discountApprover'],
-      order: { id: 'ASC' }
+      order: { createdAt: 'DESC' }
     });
 
     return new PaginatedResponseDto(data, total, page, limit);

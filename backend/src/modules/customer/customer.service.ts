@@ -18,7 +18,7 @@ export class CustomerService {
     const [data, total] = await this.customerRepository.findAndCount({
       skip,
       take: limit,
-      order: { id: 'ASC' }
+      order: { createdAt: 'DESC' }
     });
 
     return new PaginatedResponseDto(data, total, page, limit);

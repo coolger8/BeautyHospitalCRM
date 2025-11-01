@@ -1,0 +1,2 @@
+Username (Email): admin@beautyhospital.com
+Password: admin123
